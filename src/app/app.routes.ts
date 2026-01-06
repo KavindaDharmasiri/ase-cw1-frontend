@@ -1,23 +1,39 @@
 import { Routes } from '@angular/router';
-import { RegisterComponent } from './register/register.component';
-import { LoginComponent } from './login/login.component';
-import { DashboardComponent } from './dashboard/dashboard.component';
-import { RetailerComponent } from './retailer/retailer.component';
-import { RdcStaffComponent } from './rdc-staff/rdc-staff.component';
-import { LogisticsComponent } from './logistics/logistics.component';
-import { HeadOfficeComponent } from './head-office/head-office.component';
-import { UnauthorizedComponent } from './unauthorized/unauthorized.component';
-import { AuthGuard } from './guards/auth.guard';
-import { RoleGuard } from './guards/role.guard';
+import { RegisterComponent } from './features/auth/register/register.component';
+import { LoginComponent } from './features/auth/login/login.component';
+import { DashboardComponent } from './features/dashboard/dashboard/dashboard.component';
+import { ProductsComponent } from './features/products/products/products.component';
+import { InventoryComponent } from './features/inventory/inventory/inventory.component';
+import { UnauthorizedComponent } from './features/auth/unauthorized/unauthorized.component';
+import { AnalyticsComponent } from './features/dashboard/analytics/analytics.component';
+import { OrderPlacementComponent } from './features/orders/order-placement/order-placement.component';
+import { DeliveryTrackingComponent } from './features/delivery-tracking/delivery-tracking.component';
+import { StockTransferComponent } from './features/stock-transfer/stock-transfer.component';
+import { OrderTrackingComponent } from './features/order-tracking/order-tracking.component';
+import { InvoicesComponent } from './features/invoices/invoices.component';
+import { ReportsComponent } from './features/reports/reports.component';
+import { OrderManagementComponent } from './features/orders/order-management/order-management.component';
+import { AuthGuard } from './core/guards/auth.guard';
+import { RoleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'register', component: RegisterComponent },
   { path: 'login', component: LoginComponent },
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
-  { path: 'retailer', component: RetailerComponent, canActivate: [RoleGuard], data: { role: 'RETAILER' } },
-  { path: 'rdc-staff', component: RdcStaffComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
-  { path: 'logistics', component: LogisticsComponent, canActivate: [RoleGuard], data: { role: 'LOGISTICS' } },
-  { path: 'head-office', component: HeadOfficeComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'analytics', component: AnalyticsComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'orders/place', component: OrderPlacementComponent, canActivate: [RoleGuard], data: { role: 'RETAILER' } },
+  { path: 'delivery-tracking', component: DeliveryTrackingComponent, canActivate: [RoleGuard], data: { role: 'LOGISTICS' } },
+  { path: 'stock-transfers', component: StockTransferComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
+  { path: 'orders', component: OrderTrackingComponent, canActivate: [RoleGuard], data: { role: 'RETAILER' } },
+  { path: 'invoices', component: InvoicesComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'reports', component: ReportsComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'orders/manage', component: OrderManagementComponent, canActivate: [AuthGuard] },
+  { path: 'retailer', component: DashboardComponent, canActivate: [RoleGuard], data: { role: 'RETAILER' } },
+  { path: 'rdc-staff', component: DashboardComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
+  { path: 'logistics', component: DashboardComponent, canActivate: [RoleGuard], data: { role: 'LOGISTICS' } },
+  { path: 'head-office', component: DashboardComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'products', component: ProductsComponent, canActivate: [AuthGuard] },
+  { path: 'inventory', component: InventoryComponent, canActivate: [AuthGuard] },
   { path: 'unauthorized', component: UnauthorizedComponent }
 ];

@@ -46,6 +46,15 @@ export class AuthService {
     return role;
   }
 
+  getUsername(): string | null {
+    const userInfo = localStorage.getItem('user_info');
+    if (userInfo) {
+      const user = JSON.parse(userInfo);
+      return user.username || user.fullName || 'User';
+    }
+    return null;
+  }
+
   logout(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem('user_role');
