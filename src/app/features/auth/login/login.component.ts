@@ -66,6 +66,7 @@ interface LoginRequest {
         
         <div class="auth-footer">
           <p>Don't have an account? <a routerLink="/register" class="link">Create account</a></p>
+          <p><a routerLink="/forgot-password" class="link">Forgot your password?</a></p>
         </div>
       </div>
     </div>

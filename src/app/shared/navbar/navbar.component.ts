@@ -23,10 +23,14 @@ import { AuthService } from '../../core/services/auth.service';
         <a *ngIf="userRole === 'HEAD_OFFICE_MANAGER'" routerLink="/head-office" routerLinkActive="active">Head Office</a>
         
         <!-- Common features -->
+        <a *ngIf="userRole === 'RETAILER'" routerLink="/product-catalog" routerLinkActive="active">Browse Products</a>
         <a *ngIf="userRole === 'RDC_STAFF' || userRole === 'HEAD_OFFICE_MANAGER'" 
            routerLink="/products" routerLinkActive="active">Products</a>
+        <a *ngIf="userRole === 'HEAD_OFFICE_MANAGER'" routerLink="/bulk-upload" routerLinkActive="active">Bulk Upload</a>
         <a *ngIf="userRole === 'RDC_STAFF' || userRole === 'HEAD_OFFICE_MANAGER' || userRole === 'LOGISTICS'" 
            routerLink="/inventory" routerLinkActive="active">Inventory</a>
+        <a *ngIf="userRole === 'HEAD_OFFICE_MANAGER'" routerLink="/admin" routerLinkActive="active">Admin</a>
+        <a routerLink="/profile" routerLinkActive="active">Profile</a>
       </div>
       
       <div class="nav-user">
