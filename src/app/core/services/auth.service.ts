@@ -1,17 +1,19 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, catchError } from 'rxjs/operators';
+import { Router } from '@angular/router';
+import { of } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Injectable()
 export class AuthService {
-  private apiUrl = 'http://localhost:5000/api/auth';
   private tokenKey = 'jwt_token';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   login(credentials: any): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/login`, credentials)
+    return this.http.post<any>(`${environment.apiUrl}${environment.endpoints.auth.login}`, credentials)
       .pipe(tap(response => {
         console.log('Login response:', response);
         this.setToken(response.token);
@@ -22,8 +24,20 @@ export class AuthService {
       }));
   }
 
+  validateToken(): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}${environment.endpoints.auth.validate}`)
+      .pipe(
+        catchError(error => {
+          console.log('Token validation failed:', error);
+          this.logout();
+          this.router.navigate(['/login']);
+          return of(null);
+        })
+      );
+  }
+
   register(userData: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/register`, userData);
+    return this.http.post(`${environment.apiUrl}${environment.endpoints.auth.register}`, userData, { responseType: 'text' });
   }
 
   setToken(token: string): void {
@@ -37,6 +51,9 @@ export class AuthService {
   isAuthenticated(): boolean {
     const token = this.getToken();
     console.log('isAuthenticated - token exists:', !!token);
+    if (token) {
+      this.validateToken().subscribe();
+    }
     return !!token;
   }
 

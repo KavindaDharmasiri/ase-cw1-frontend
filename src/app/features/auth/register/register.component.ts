@@ -232,6 +232,7 @@ export class RegisterComponent {
   onSubmit() {
     this.authService.register(this.registerData).subscribe({
       next: (response) => {
+        console.log('Registration response:', response);
         Swal.fire({
           icon: 'success',
           title: 'Registration Successful!',
@@ -242,10 +243,13 @@ export class RegisterComponent {
         });
       },
       error: (error) => {
+        console.error('Registration error:', error);
+        const errorMessage = typeof error.error === 'string' ? error.error : 
+                           error.error?.message || 'Registration failed. Please try again.';
         Swal.fire({
           icon: 'error',
           title: 'Registration Failed',
-          text: error.error?.message || 'Please try again later.'
+          text: errorMessage
         });
       }
     });

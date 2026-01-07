@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { OrderService } from '../../core/services/order.service';
 import { DeliveryService } from '../../core/services/delivery.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -8,7 +9,7 @@ import { Order } from '../../models/order.model';
 @Component({
   selector: 'app-order-tracking',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   providers: [OrderService, DeliveryService],
   template: `
     <div class="tracking-container">
@@ -58,6 +59,9 @@ import { Order } from '../../models/order.model';
                 <span>Delivered</span>
               </div>
             </div>
+            <div class="delivery-actions" *ngIf="order.status === 'SHIPPED'">
+              <a [routerLink]="['/delivery-status', order.id]" class="track-delivery-btn">🗺️ Track Live Delivery</a>
+            </div>
           </div>
         </div>
       </div>
@@ -87,6 +91,8 @@ import { Order } from '../../models/order.model';
     .step { display: flex; flex-direction: column; align-items: center; opacity: 0.5; }
     .step.active { opacity: 1; color: #27ae60; }
     .step-icon { font-size: 24px; margin-bottom: 5px; }
+    .delivery-actions { margin-top: 15px; text-align: center; }
+    .track-delivery-btn { padding: 10px 20px; background: #e67e22; color: white; text-decoration: none; border-radius: 4px; display: inline-block; }
     .no-orders { text-align: center; padding: 40px; }
     .btn { padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 4px; display: inline-block; }
   `]

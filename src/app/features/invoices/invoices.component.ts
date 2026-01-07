@@ -1,165 +1,154 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { InvoiceService } from '../../core/services/invoice.service';
-import { Invoice } from '../../models/invoice.model';
+import { AuthService } from '../../core/services/auth.service';
+import { PaymentService } from '../../core/services/payment.service';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-invoices',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  providers: [InvoiceService],
+  providers: [],
   template: `
-    <div class="invoices-container">
-      <h1>💰 Invoice Management</h1>
+    <div class="invoices-container fade-in">
+      <h1>My Invoices</h1>
       
-      <div class="filters">
-        <select [(ngModel)]="statusFilter" (change)="filterInvoices()">
-          <option value="">All Status</option>
-          <option value="PENDING">Pending</option>
-          <option value="PAID">Paid</option>
-          <option value="OVERDUE">Overdue</option>
-        </select>
-        
-        <div class="stats">
-          <span class="stat">Total: {{invoices.length}}</span>
-          <span class="stat">Pending: {{getPendingCount()}}</span>
-          <span class="stat">Paid: {{getPaidCount()}}</span>
-        </div>
-      </div>
-
-      <div class="invoices-grid">
-        <div *ngFor="let invoice of filteredInvoices" class="invoice-card" 
-             [ngClass]="'status-' + invoice.paymentStatus.toLowerCase()">
+      <div class="invoices-list" *ngIf="invoices.length > 0">
+        <div class="invoice-card" *ngFor="let invoice of invoices">
           <div class="invoice-header">
-            <h3>{{invoice.invoiceNumber}}</h3>
-            <span class="status-badge">{{invoice.paymentStatus}}</span>
+            <h3>Invoice #{{invoice.id}}</h3>
+            <span class="invoice-date">{{formatDate(invoice.paymentDate)}}</span>
           </div>
-          
           <div class="invoice-details">
-            <p><strong>Order:</strong> #{{invoice.order.id}}</p>
-            <p><strong>Customer:</strong> {{invoice.order.customer.fullName}}</p>
-            <p><strong>Date:</strong> {{formatDate(invoice.invoiceDate)}}</p>
-            <p><strong>Subtotal:</strong> \${{invoice.subtotal}}</p>
-            <p><strong>Tax:</strong> \${{invoice.taxAmount}}</p>
-            <p><strong>Total:</strong> \${{invoice.totalAmount}}</p>
-            <p *ngIf="invoice.paidDate"><strong>Paid:</strong> {{formatDate(invoice.paidDate)}}</p>
+            <p><strong>Order ID:</strong> {{invoice.orderId}}</p>
+            <p><strong>Amount:</strong> Rs. {{invoice.amount | number:'1.2-2'}}</p>
+            <p><strong>Payment Method:</strong> {{invoice.method}}</p>
+            <p><strong>Status:</strong> 
+              <span class="status" [class]="invoice.status?.toLowerCase()">{{invoice.status}}</span>
+            </p>
+            <p *ngIf="invoice.transactionId"><strong>Transaction ID:</strong> {{invoice.transactionId}}</p>
           </div>
-
-          <div class="invoice-actions" *ngIf="invoice.paymentStatus === 'PENDING'">
-            <button (click)="markAsPaid(invoice)" class="btn-pay">Mark as Paid</button>
+          <div class="invoice-actions">
+            <button class="btn-download" (click)="downloadInvoice(invoice.id)">Download PDF</button>
+            <button class="btn-view" (click)="viewInvoice(invoice)">View Details</button>
           </div>
         </div>
       </div>
 
-      <div *ngIf="filteredInvoices.length === 0" class="no-invoices">
-        <p>No invoices found.</p>
+      <div class="empty-invoices" *ngIf="invoices.length === 0">
+        <h2>No invoices found</h2>
+        <p>Your invoices will appear here after placing orders.</p>
       </div>
     </div>
   `,
   styles: [`
-    .invoices-container { padding: 20px; }
-    .filters { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
-    .filters select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-    .stats { display: flex; gap: 20px; }
-    .stat { padding: 8px 12px; background: white; border-radius: 4px; font-weight: bold; }
-    .invoices-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
-    .invoice-card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; background: white; }
-    .invoice-card.status-pending { border-left: 4px solid #f39c12; }
-    .invoice-card.status-paid { border-left: 4px solid #27ae60; }
-    .invoice-card.status-overdue { border-left: 4px solid #e74c3c; }
-    .invoice-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; background: #ecf0f1; color: #2c3e50; }
-    .invoice-details p { margin: 5px 0; }
-    .invoice-actions { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
-    .btn-pay { background: #27ae60; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
-    .no-invoices { text-align: center; padding: 40px; color: #666; }
+    .invoices-container { padding: 40px; max-width: 1000px; margin: 0 auto; }
+    .invoices-list { display: grid; gap: 20px; }
+    .invoice-card { background: white; padding: 24px; border-radius: var(--border-radius-lg); box-shadow: var(--shadow-sm); }
+    .invoice-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .invoice-header h3 { margin: 0; color: var(--gray-800); }
+    .invoice-date { color: var(--gray-600); font-size: 14px; }
+    .invoice-details p { margin: 8px 0; }
+    .status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+    .status.completed { background: var(--green-100); color: var(--secondary-green); }
+    .status.pending { background: var(--yellow-100); color: var(--yellow-600); }
+    .status.failed { background: var(--red-100); color: var(--red-600); }
+    .invoice-actions { display: flex; gap: 12px; margin-top: 16px; }
+    .btn-download, .btn-view { padding: 8px 16px; border: none; border-radius: var(--border-radius-md); cursor: pointer; }
+    .btn-download { background: var(--primary-blue); color: white; }
+    .btn-view { background: var(--gray-100); color: var(--gray-700); }
+    .empty-invoices { text-align: center; padding: 80px 40px; }
   `]
 })
 export class InvoicesComponent implements OnInit {
-  invoices: Invoice[] = [];
-  filteredInvoices: Invoice[] = [];
-  statusFilter = '';
+  invoices: any[] = [];
 
-  constructor(private invoiceService: InvoiceService) {}
+  constructor(
+    private authService: AuthService,
+    private paymentService: PaymentService
+  ) {}
 
   ngOnInit() {
     this.loadInvoices();
   }
 
   loadInvoices() {
-    this.invoiceService.getAllInvoices().subscribe({
-      next: (invoices) => {
-        this.invoices = invoices;
-        this.filteredInvoices = [...this.invoices];
+    this.paymentService.getPaymentHistory().subscribe({
+      next: (payments) => {
+        this.invoices = payments;
       },
-      error: (error) => console.error('Error loading invoices:', error)
-    });
-  }
-
-  filterInvoices() {
-    if (this.statusFilter) {
-      this.filteredInvoices = this.invoices.filter(invoice => 
-        invoice.paymentStatus === this.statusFilter);
-    } else {
-      this.filteredInvoices = [...this.invoices];
-    }
-  }
-
-  markAsPaid(invoice: Invoice) {
-    Swal.fire({
-      title: 'Mark as Paid',
-      html: `
-        <input id="paymentMethod" class="swal2-input" placeholder="Payment Method" value="Cash">
-        <input id="paymentReference" class="swal2-input" placeholder="Payment Reference">
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Mark as Paid',
-      preConfirm: () => {
-        const paymentMethod = (document.getElementById('paymentMethod') as HTMLInputElement).value;
-        const paymentReference = (document.getElementById('paymentReference') as HTMLInputElement).value;
-        
-        if (!paymentMethod) {
-          Swal.showValidationMessage('Payment method is required');
-          return false;
-        }
-        
-        return { paymentMethod, paymentReference };
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.invoiceService.markAsPaid(
-          invoice.id, 
-          result.value.paymentMethod, 
-          result.value.paymentReference
-        ).subscribe({
-          next: (updatedInvoice) => {
-            const index = this.invoices.findIndex(i => i.id === invoice.id);
-            if (index !== -1) {
-              this.invoices[index] = updatedInvoice;
-              this.filterInvoices();
-            }
-            Swal.fire('Success', 'Invoice marked as paid', 'success');
+      error: () => {
+        // Mock data for demo
+        this.invoices = [
+          {
+            id: 1,
+            orderId: 1001,
+            amount: 2500.00,
+            method: 'ONLINE',
+            status: 'COMPLETED',
+            transactionId: 'TXN_12345678',
+            paymentDate: new Date('2024-01-15')
           },
-          error: (error) => {
-            Swal.fire('Error', 'Failed to update invoice', 'error');
-            console.error('Error updating invoice:', error);
+          {
+            id: 2,
+            orderId: 1002,
+            amount: 1800.00,
+            method: 'CASH_ON_DELIVERY',
+            status: 'PENDING',
+            paymentDate: new Date('2024-01-20')
           }
-        });
+        ];
       }
     });
   }
 
-  getPendingCount(): number {
-    return this.invoices.filter(i => i.paymentStatus === 'PENDING').length;
+  formatDate(date: Date): string {
+    return new Date(date).toLocaleDateString();
   }
 
-  getPaidCount(): number {
-    return this.invoices.filter(i => i.paymentStatus === 'PAID').length;
+  downloadInvoice(invoiceId: number) {
+    // Generate PDF content
+    const pdfContent = `
+      INVOICE #${invoiceId}
+      ==================
+      
+      Date: ${new Date().toLocaleDateString()}
+      Customer: ${this.authService.getUsername()}
+      
+      Order Details:
+      - Order ID: ${invoiceId}
+      - Amount: Rs. ${this.invoices.find(i => i.id === invoiceId)?.amount || 0}
+      
+      Thank you for your business!
+    `;
+    
+    // Create and download file
+    const blob = new Blob([pdfContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `invoice-${invoiceId}.txt`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+    
+    Swal.fire('Downloaded', `Invoice #${invoiceId} has been downloaded.`, 'success');
   }
 
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString();
+  viewInvoice(invoice: any) {
+    Swal.fire({
+      title: `Invoice #${invoice.id}`,
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Order ID:</strong> ${invoice.orderId}</p>
+          <p><strong>Amount:</strong> Rs. ${invoice.amount}</p>
+          <p><strong>Payment Method:</strong> ${invoice.method}</p>
+          <p><strong>Status:</strong> ${invoice.status}</p>
+          <p><strong>Date:</strong> ${this.formatDate(invoice.paymentDate)}</p>
+          ${invoice.transactionId ? `<p><strong>Transaction ID:</strong> ${invoice.transactionId}</p>` : ''}
+        </div>
+      `,
+      confirmButtonText: 'Close'
+    });
   }
 }

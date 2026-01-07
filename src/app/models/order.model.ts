@@ -3,13 +3,17 @@ import { User } from './user.model';
 
 export interface Order {
   id: number;
+  orderCode: string;
   customer: User;
   rdcLocation: string;
   status: OrderStatus;
   totalAmount: number;
   orderDate: string;
   deliveryDate?: string;
+  estimatedDeliveryDate?: string;
   deliveryAddress: string;
+  customerPhone?: string;
+  storeName?: string;
   orderItems?: OrderItem[];
   newStatus?: OrderStatus; // For UI state management
 }
@@ -27,6 +31,7 @@ export type OrderStatus =
   | 'CONFIRMED' 
   | 'PROCESSING' 
   | 'SHIPPED' 
+  | 'OUT_FOR_DELIVERY'
   | 'DELIVERED' 
   | 'CANCELLED';
 

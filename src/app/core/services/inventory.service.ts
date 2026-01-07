@@ -36,4 +36,12 @@ export class InventoryService {
   getLowStockItemsByRdc(rdcLocation: string): Observable<Inventory[]> {
     return this.http.get<Inventory[]>(`${this.apiUrl}/low-stock/rdc/${rdcLocation}`);
   }
+
+  deleteInventoryByProductAndRdc(productId: number, rdcLocation: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/product/${productId}/rdc/${rdcLocation}`, { responseType: 'text' });
+  }
+
+  deleteInventoryByProduct(productId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/product/${productId}`, { responseType: 'text' });
+  }
 }

@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../../core/services/product.service';
-import { OrderService } from '../../../core/services/order.service';
+import { CartService } from '../../../core/services/cart.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { Product } from '../../../models/product.model';
 import Swal from 'sweetalert2';
 
@@ -10,7 +11,7 @@ import Swal from 'sweetalert2';
   selector: 'app-product-catalog',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  providers: [ProductService, OrderService],
+  providers: [ProductService],
   template: `
     <div class="catalog-container">
       <div class="catalog-header">
@@ -38,19 +39,28 @@ import Swal from 'sweetalert2';
             <div class="product-details">
               <span class="price">\${{product.price}}</span>
               <span class="unit">per {{product.unit}}</span>
+              <div class="stock-info">
+                <span class="stock" [class.low-stock]="product.unit <= 10" [class.out-of-stock]="product.unit === 0">
+                  {{product.unit > 0 ? product.unit + ' in stock' : 'Out of stock'}}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div class="product-actions">
+          <div class="product-actions" *ngIf="product.unit > 0">
             <div class="quantity-selector">
               <button (click)="decreaseQuantity(product)" class="qty-btn">-</button>
               <input type="number" [(ngModel)]="product.selectedQuantity" 
-                     min="1" class="qty-input">
-              <button (click)="increaseQuantity(product)" class="qty-btn">+</button>
+                     [max]="product.unit" min="1" class="qty-input">
+              <button (click)="increaseQuantity(product)" [disabled]="product.selectedQuantity >= product.unit" class="qty-btn">+</button>
             </div>
-            <button (click)="addToCart(product)" class="btn-add-cart">
+            <button (click)="addToCart(product)" [disabled]="product.selectedQuantity > product.unit" class="btn-add-cart">
               Add to Cart
             </button>
+          </div>
+          
+          <div class="product-actions out-of-stock" *ngIf="product.unit === 0">
+            <span class="out-of-stock-text">Out of Stock</span>
           </div>
         </div>
       </div>
@@ -59,11 +69,11 @@ import Swal from 'sweetalert2';
         <p>No products found matching your criteria.</p>
       </div>
 
-      <div *ngIf="cartItems.length > 0" class="cart-summary">
-        <h3>Cart ({{cartItems.length}} items)</h3>
+      <div *ngIf="cartItemCount > 0" class="cart-summary">
+        <h3>Cart ({{cartItemCount}} items)</h3>
         <div class="cart-total">Total: \${{getCartTotal()}}</div>
         <button (click)="proceedToCheckout()" class="btn-checkout">
-          Proceed to Checkout
+          View Cart
         </button>
       </div>
     </div>
@@ -95,6 +105,13 @@ import Swal from 'sweetalert2';
     .cart-total { font-size: 18px; font-weight: bold; margin: 10px 0; }
     .btn-checkout { width: 100%; background: #27ae60; color: white; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .no-products { text-align: center; padding: 40px; color: #666; }
+    .stock { font-size: 12px; color: #27ae60; font-weight: 500; }
+    .low-stock { color: #f39c12; }
+    .out-of-stock { color: #e74c3c; }
+    .stock-info { margin-top: 5px; }
+    .qty-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-add-cart:disabled { opacity: 0.5; cursor: not-allowed; background: #bdc3c7; }
+    .out-of-stock-text { color: #e74c3c; font-weight: bold; text-align: center; width: 100%; }
   `]
 })
 export class ProductCatalogComponent implements OnInit {
@@ -103,15 +120,20 @@ export class ProductCatalogComponent implements OnInit {
   categories: string[] = [];
   searchTerm = '';
   categoryFilter = '';
-  cartItems: any[] = [];
+  cartItemCount = 0;
 
   constructor(
     private productService: ProductService,
-    private orderService: OrderService
+    public cartService: CartService,
+    private notificationService: NotificationService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     this.loadProducts();
+    this.cartService.getCartItems().subscribe(items => {
+      this.cartItemCount = items.reduce((count, item) => count + item.quantity, 0);
+    });
   }
 
   loadProducts() {
@@ -120,6 +142,7 @@ export class ProductCatalogComponent implements OnInit {
         this.products = products.map(p => ({...p, selectedQuantity: 1}));
         this.filteredProducts = [...this.products];
         this.categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+        this.cdr.detectChanges();
       },
       error: (error) => console.error('Error loading products:', error)
     });
@@ -135,7 +158,9 @@ export class ProductCatalogComponent implements OnInit {
   }
 
   increaseQuantity(product: any) {
-    product.selectedQuantity++;
+    if (product.selectedQuantity < product.unit) {
+      product.selectedQuantity++;
+    }
   }
 
   decreaseQuantity(product: any) {
@@ -145,54 +170,65 @@ export class ProductCatalogComponent implements OnInit {
   }
 
   addToCart(product: any) {
-    const existingItem = this.cartItems.find(item => item.id === product.id);
-    if (existingItem) {
-      existingItem.quantity += product.selectedQuantity;
-    } else {
-      this.cartItems.push({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: product.selectedQuantity
+    if (product.selectedQuantity > product.unit) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Quantity',
+        text: `Only ${product.unit} items available in stock`
       });
+      return;
     }
     
-    Swal.fire({
-      icon: 'success',
-      title: 'Added to Cart!',
-      text: `${product.name} (${product.selectedQuantity}) added to cart`,
-      timer: 1500,
-      showConfirmButton: false
-    });
-  }
-
-  getCartTotal(): number {
-    return this.cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-  }
-
-  proceedToCheckout() {
-    if (this.cartItems.length === 0) return;
-    
-    Swal.fire({
-      title: 'Proceed to Checkout?',
-      text: `Total: $${this.getCartTotal()}`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, Place Order'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.placeOrder();
+    this.cartService.addToCart(product, product.selectedQuantity).subscribe({
+      next: () => {
+        this.notificationService.addLocalNotification({
+          title: 'Added to Cart',
+          message: `${product.name} (${product.selectedQuantity}) added to cart`,
+          type: 'ORDER',
+          isRead: false
+        });
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Added to Cart!',
+          text: `${product.name} (${product.selectedQuantity}) added to cart`,
+          timer: 1500,
+          showConfirmButton: false
+        });
+      },
+      error: () => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to add item to cart'
+        });
       }
     });
   }
 
+  getCartTotal(): number {
+    return this.cartService.getCartTotal();
+  }
+
+  proceedToCheckout() {
+    this.cartService.getCartItems().subscribe(items => {
+      if (items.length === 0) return;
+      
+      Swal.fire({
+        title: 'Proceed to Checkout?',
+        text: `Total: $${this.getCartTotal()}`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Go to Cart'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = '/cart';
+        }
+      });
+    });
+  }
+
   placeOrder() {
-    const orderData = {
-      items: this.cartItems,
-      totalAmount: this.getCartTotal()
-    };
-    
-    Swal.fire('Success!', 'Order placed successfully!', 'success');
-    this.cartItems = [];
+    // This method is no longer needed as we use cart service
   }
 }

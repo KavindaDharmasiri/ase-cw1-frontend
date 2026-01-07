@@ -37,15 +37,16 @@ import Swal from 'sweetalert2';
         <div *ngFor="let order of filteredOrders" class="order-card" 
              [ngClass]="'status-' + order.status.toLowerCase()">
           <div class="order-header">
-            <h3>Order #{{order.id}}</h3>
+            <h3>{{order.orderCode}}</h3>
             <span class="status-badge">{{order.status}}</span>
           </div>
           
           <div class="order-details">
-            <p><strong>Customer:</strong> {{order.customer.fullName}}</p>
+            <p><strong>Store:</strong> {{order.storeName || order.customer.fullName}}</p>
+            <p><strong>Phone:</strong> {{order.customerPhone || 'N/A'}}</p>
             <p><strong>RDC:</strong> {{order.rdcLocation}}</p>
             <p><strong>Order Date:</strong> {{formatDate(order.orderDate)}}</p>
-            <p><strong>Total Amount:</strong> \${{order.totalAmount}}</p>
+            <p><strong>Total Amount:</strong> Rs. {{order.totalAmount}}</p>
             <p><strong>Delivery Address:</strong> {{order.deliveryAddress}}</p>
           </div>
 
@@ -53,7 +54,7 @@ import Swal from 'sweetalert2';
             <h4>Items ({{order.orderItems?.length || 0}}):</h4>
             <div *ngFor="let item of order.orderItems" class="order-item">
               <span>{{item.product.name}} × {{item.quantity}}</span>
-              <span>\${{item.totalPrice}}</span>
+              <span>Rs. {{item.totalPrice}}</span>
             </div>
           </div>
 

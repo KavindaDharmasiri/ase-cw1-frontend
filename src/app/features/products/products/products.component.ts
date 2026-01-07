@@ -26,6 +26,11 @@ import Swal from 'sweetalert2';
       </div>
 
       <div class="products-grid">
+        <div *ngIf="filteredProducts.length === 0" class="empty-state">
+          <div class="empty-icon">📦</div>
+          <h3>No Products Found</h3>
+          <p>No products are available. Click "Add Product" to get started.</p>
+        </div>
         <div *ngFor="let product of filteredProducts" class="product-card">
           <div class="product-image">
             <img [src]="product.imageUrl || 'https://via.placeholder.com/200x150?text=No+Image'" 
@@ -62,7 +67,10 @@ import Swal from 'sweetalert2';
             <textarea placeholder="Enter product description" [(ngModel)]="currentProduct.description" name="description"></textarea>
             
             <label>Category *</label>
-            <input type="text" placeholder="Enter category" [(ngModel)]="currentProduct.category" name="category" required>
+            <select [(ngModel)]="currentProduct.category" name="category" required>
+              <option value="">Select Category</option>
+              <option *ngFor="let category of categories" [value]="category">{{category}}</option>
+            </select>
             
             <label>Price *</label>
             <input type="number" placeholder="Enter price" [(ngModel)]="currentProduct.price" name="price" step="0.01" required>
@@ -72,7 +80,7 @@ import Swal from 'sweetalert2';
             
             <label>Image</label>
             <input type="file" accept="image/*" (change)="onImageSelected($event)" name="image">
-            <div *ngIf="selectedImage" class="image-preview">
+            <div *ngIf="selectedImage || imagePreview" class="image-preview">
               <img [src]="imagePreview" alt="Preview" class="preview-img">
               <button type="button" class="btn-remove" (click)="removeImage()">×</button>
             </div>
@@ -123,7 +131,10 @@ import Swal from 'sweetalert2';
     .preview-img { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; }
     .btn-remove { position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; }
     .modal textarea { height: 80px; resize: vertical; }
-    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #666; grid-column: 1 / -1; }
+    .empty-icon { font-size: 4rem; margin-bottom: 1rem; }
+    .empty-state h3 { margin: 0 0 0.5rem 0; color: #333; }
+    .empty-state p { margin: 0; }
   `]
 })
 export class ProductsComponent implements OnInit {
@@ -202,6 +213,8 @@ export class ProductsComponent implements OnInit {
   editProduct(product: Product) {
     this.isEditing = true;
     this.currentProduct = { ...product };
+    this.selectedImage = null;
+    this.imagePreview = product.imageUrl || null;
     this.showModal = true;
   }
 
@@ -209,6 +222,7 @@ export class ProductsComponent implements OnInit {
     this.showModal = false;
     this.selectedImage = null;
     this.imagePreview = null;
+    this.currentProduct = this.getEmptyProduct();
   }
 
   onImageSelected(event: any) {
@@ -249,19 +263,19 @@ export class ProductsComponent implements OnInit {
   private saveProductData() {
     if (this.isEditing) {
       this.productService.updateProduct(this.currentProduct.id!, this.currentProduct).subscribe({
-        next: () => {
-          Swal.fire('Success', 'Product updated successfully', 'success');
-          this.loadProducts();
+        next: (updatedProduct) => {
           this.closeModal();
+          this.loadProducts();
+          Swal.fire('Success', 'Product updated successfully', 'success');
         },
         error: (error) => Swal.fire('Error', 'Failed to update product', 'error')
       });
     } else {
       this.productService.createProduct(this.currentProduct).subscribe({
-        next: () => {
-          Swal.fire('Success', 'Product created successfully', 'success');
-          this.loadProducts();
+        next: (newProduct) => {
           this.closeModal();
+          this.loadProducts();
+          Swal.fire('Success', 'Product created successfully', 'success');
         },
         error: (error) => Swal.fire('Error', 'Failed to create product', 'error')
       });
@@ -278,11 +292,17 @@ export class ProductsComponent implements OnInit {
     }).then((result) => {
       if (result.isConfirmed) {
         this.productService.deleteProduct(id).subscribe({
-          next: () => {
+          next: (response) => {
+            // Remove from local arrays immediately
+            this.products = this.products.filter(p => p.id !== id);
+            this.filteredProducts = this.filteredProducts.filter(p => p.id !== id);
+            this.cdr.detectChanges();
             Swal.fire('Deleted', 'Product deleted successfully', 'success');
-            this.loadProducts();
           },
-          error: (error) => Swal.fire('Error', 'Failed to delete product', 'error')
+          error: (error) => {
+            console.error('Delete error:', error);
+            Swal.fire('Error', 'Failed to delete product', 'error');
+          }
         });
       }
     });
