@@ -1,16 +1,11 @@
 export interface PurchaseOrder {
   id?: number;
   poNumber: string;
-  supplier: any;
-  rdc?: any;
-  status: POStatus;
+  supplierName: string;
+  status: string;
   totalAmount: number;
   orderDate: Date;
   expectedDeliveryDate?: Date;
-  actualDeliveryDate?: Date;
-  items?: PurchaseOrderItem[];
-  createdAt?: Date;
-  updatedAt?: Date;
 }
 
 export interface PurchaseOrderItem {
@@ -24,10 +19,8 @@ export interface PurchaseOrderItem {
 }
 
 export enum POStatus {
-  PENDING = 'PENDING',
-  SENT = 'SENT',
-  CONFIRMED = 'CONFIRMED',
-  PARTIALLY_RECEIVED = 'PARTIALLY_RECEIVED',
+  ISSUED = 'ISSUED',
   RECEIVED = 'RECEIVED',
+  CLOSED = 'CLOSED',
   CANCELLED = 'CANCELLED'
 }

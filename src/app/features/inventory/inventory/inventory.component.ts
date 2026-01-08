@@ -18,9 +18,9 @@ import Swal from 'sweetalert2';
       <div class="header">
         <h1>📦 Inventory Tracking</h1>
         <div class="rdc-selector" *ngIf="userRole === 'HEAD_OFFICE_MANAGER'">
-          <select [(ngModel)]="selectedRdc" (change)="loadInventory()">
+          <select [(ngModel)]="selectedRdcId" (change)="loadInventory()">
             <option value="">All RDCs</option>
-            <option *ngFor="let rdc of rdcs" [value]="rdc.name">{{rdc.name}} RDC</option>
+            <option *ngFor="let rdc of rdcs" [value]="rdc.id">{{rdc.name}} RDC</option>
           </select>
         </div>
       </div>
@@ -38,31 +38,31 @@ import Swal from 'sweetalert2';
           <h3>No Inventory Found</h3>
           <p>There are no inventory items to display for the selected criteria.</p>
         </div>
-        <div *ngFor="let item of inventoryItems" class="inventory-card" 
-             [ngClass]="{'low-stock': item.currentStock <= item.product.minStockLevel}">
+        <div *ngFor="let item of inventoryItems" class="inventory-card"
+             [ngClass]="{'low-stock': item.availableStock <= 10}">
           <div class="product-info">
-            <h3>{{item.product.name}}</h3>
-            <p class="category">{{item.product.category}}</p>
-            <p class="rdc">📍 {{item.rdcLocation}} RDC</p>
+            <h3>{{item.product?.name}}</h3>
+            <p class="category">{{item.product?.category?.name}}</p>
+            <p class="rdc">📍 {{item.rdc?.name}} RDC</p>
           </div>
-          
+
           <div class="stock-info">
             <div class="stock-level">
-              <span class="current">{{item.currentStock}}</span>
-              <span class="unit">{{item.product.unit}}</span>
+              <span class="current">{{item.availableStock}}</span>
+              <span class="unit">units</span>
             </div>
             <div class="stock-details">
-              <small>Reserved: {{item.reservedStock}}</small>
-              <small>Available: {{item.currentStock - item.reservedStock}}</small>
-              <small>Min Level: {{item.product.minStockLevel}}</small>
+              <small>Allocated: {{item.allocatedStock}}</small>
+              <small>Available: {{item.availableStock}}</small>
+              <small>Damaged: {{item.damagedStock}}</small>
             </div>
           </div>
-          
+
           <div class="actions">
             <button class="btn btn-sm" (click)="updateStock(item)">Update Stock</button>
-            <button class="btn btn-sm" (click)="transferStock(item)" 
+            <button class="btn btn-sm" (click)="transferStock(item)"
                     *ngIf="userRole === 'HEAD_OFFICE_MANAGER' || userRole === 'RDC_STAFF'">Transfer</button>
-            <button class="btn btn-sm btn-danger" (click)="deleteInventory(item)" 
+            <button class="btn btn-sm btn-danger" (click)="deleteInventory(item)"
                     *ngIf="userRole === 'HEAD_OFFICE_MANAGER'">Delete</button>
           </div>
         </div>
@@ -73,7 +73,7 @@ import Swal from 'sweetalert2';
         <div class="modal" (click)="$event.stopPropagation()">
           <h2>Update Stock - {{selectedItem?.product?.name}}</h2>
           <form (ngSubmit)="saveStockUpdate()">
-            <label>Current Stock: {{selectedItem?.currentStock}}</label>
+            <label>Current Stock: {{selectedItem?.availableStock}}</label>
             <input type="number" [(ngModel)]="newStockLevel" name="stock" required min="0">
             <div class="modal-actions">
               <button type="button" class="btn" (click)="closeModal()">Cancel</button>
@@ -88,13 +88,13 @@ import Swal from 'sweetalert2';
         <div class="modal" (click)="$event.stopPropagation()">
           <h2>Transfer Stock - {{selectedItem?.product?.name}}</h2>
           <form (ngSubmit)="saveStockTransfer()">
-            <label>From: {{selectedItem?.rdcLocation}} RDC</label>
-            <select [(ngModel)]="transferToRdc" name="toRdc" required>
+            <label>From: {{selectedItem?.rdc?.name}} RDC</label>
+            <select [(ngModel)]="transferToRdcId" name="toRdcId" required>
               <option value="">Select Destination RDC</option>
-              <option *ngFor="let rdc of rdcs" [value]="rdc.name">{{rdc.name}} RDC</option>
+              <option *ngFor="let rdc of rdcs" [value]="rdc.id">{{rdc.name}} RDC</option>
             </select>
-            <input type="number" placeholder="Quantity to Transfer" 
-                   [(ngModel)]="transferQuantity" name="quantity" required min="1" 
+            <input type="number" placeholder="Quantity to Transfer"
+                   [(ngModel)]="transferQuantity" name="quantity" required min="1"
                    [max]="getAvailableStock()">
             <small>Available: {{getAvailableStock()}}</small>
             <div class="modal-actions">
@@ -128,7 +128,7 @@ import Swal from 'sweetalert2';
     .actions { display: flex; gap: 8px; margin-top: 12px; }
     .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
     .btn-primary { background: #007bff; color: white; }
-    .btn-danger { background: #dc3545; color: #dc3545; border: 1px solid #dc3545; }
+    .btn-danger { background: #dc3545; color: white; }
     .btn-sm { padding: 4px 8px; background: #f8f9fa; border: 1px solid #ddd; }
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal { background: white; padding: 24px; border-radius: 8px; width: 400px; max-width: 90vw; }
@@ -146,13 +146,13 @@ export class InventoryComponent implements OnInit {
   inventoryItems: Inventory[] = [];
   lowStockItems: Inventory[] = [];
   rdcs: RDC[] = [];
-  selectedRdc = '';
+  selectedRdcId: number | null = null;
   userRole = '';
   showUpdateModal = false;
   showTransferModal = false;
   selectedItem: Inventory | null = null;
   newStockLevel = 0;
-  transferToRdc = '';
+  transferToRdcId: number | null = null;
   transferQuantity = 0;
 
   constructor(
@@ -166,26 +166,24 @@ export class InventoryComponent implements OnInit {
     this.userRole = this.authService.getUserRole() || '';
     this.loadRDCs();
     if (this.userRole === 'RDC_STAFF') {
-      // Set default RDC for staff - you might want to get this from user profile
-      this.selectedRdc = 'Colombo';
+      this.selectedRdcId = 1; // Default RDC ID
     }
     this.loadInventory();
     this.loadLowStockItems();
   }
 
   loadRDCs() {
-    this.rdcService.getAllActiveRDCs().subscribe({
-      next: (rdcs) => {
-        this.rdcs = rdcs;
-        this.cdr.detectChanges();
-      },
-      error: (error) => console.error('Error loading RDCs:', error)
-    });
+    // Mock RDCs
+    this.rdcs = [
+      { id: 1, name: 'Colombo', location: 'Colombo', active: true },
+      { id: 2, name: 'Kandy', location: 'Kandy', active: true },
+      { id: 3, name: 'Galle', location: 'Galle', active: true }
+    ];
   }
 
   loadInventory() {
-    if (this.selectedRdc) {
-      this.inventoryService.getInventoryByRdc(this.selectedRdc).subscribe({
+    if (this.selectedRdcId) {
+      this.inventoryService.getInventoryByRdc(this.selectedRdcId).subscribe({
         next: (items) => {
           this.inventoryItems = items;
           this.cdr.detectChanges();
@@ -204,8 +202,8 @@ export class InventoryComponent implements OnInit {
   }
 
   loadLowStockItems() {
-    if (this.selectedRdc) {
-      this.inventoryService.getLowStockItemsByRdc(this.selectedRdc).subscribe({
+    if (this.selectedRdcId) {
+      this.inventoryService.getLowStockItemsByRdc(this.selectedRdcId).subscribe({
         next: (items) => {
           this.lowStockItems = items;
           this.cdr.detectChanges();
@@ -225,13 +223,13 @@ export class InventoryComponent implements OnInit {
 
   updateStock(item: Inventory) {
     this.selectedItem = item;
-    this.newStockLevel = item.currentStock;
+    this.newStockLevel = item.availableStock || 0;
     this.showUpdateModal = true;
   }
 
   transferStock(item: Inventory) {
     this.selectedItem = item;
-    this.transferToRdc = '';
+    this.transferToRdcId = null;
     this.transferQuantity = 0;
     this.showTransferModal = true;
   }
@@ -243,10 +241,10 @@ export class InventoryComponent implements OnInit {
   }
 
   saveStockUpdate() {
-    if (this.selectedItem && this.selectedItem.product.id) {
+    if (this.selectedItem && this.selectedItem.product?.id && this.selectedItem.rdc?.id) {
       this.inventoryService.updateStock(
         this.selectedItem.product.id,
-        this.selectedItem.rdcLocation,
+        this.selectedItem.rdc.id,
         this.newStockLevel
       ).subscribe({
         next: () => {
@@ -261,11 +259,11 @@ export class InventoryComponent implements OnInit {
   }
 
   saveStockTransfer() {
-    if (this.selectedItem && this.selectedItem.product.id) {
+    if (this.selectedItem && this.selectedItem.product?.id && this.selectedItem.rdc?.id && this.transferToRdcId) {
       this.inventoryService.transferStock(
         this.selectedItem.product.id,
-        this.selectedItem.rdcLocation,
-        this.transferToRdc,
+        this.selectedItem.rdc.id,
+        this.transferToRdcId,
         this.transferQuantity
       ).subscribe({
         next: () => {
@@ -280,32 +278,30 @@ export class InventoryComponent implements OnInit {
   }
 
   getAvailableStock(): number {
-    if (!this.selectedItem) return 0;
-    return (this.selectedItem.currentStock || 0) - (this.selectedItem.reservedStock || 0);
+    return this.selectedItem?.availableStock || 0;
   }
 
   deleteInventory(item: Inventory) {
     Swal.fire({
       title: 'Delete Inventory?',
-      text: `Remove all inventory for "${item.product.name}" from ${item.rdcLocation} RDC?`,
+      text: `Remove all inventory for "${item.product?.name}" from ${item.rdc?.name} RDC?`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#dc3545',
       cancelButtonColor: '#6c757d',
       confirmButtonText: 'Yes, delete it!'
     }).then((result) => {
-      if (result.isConfirmed && item.product.id) {
+      if (result.isConfirmed && item.product?.id && item.rdc?.id) {
         this.inventoryService.deleteInventoryByProductAndRdc(
           item.product.id,
-          item.rdcLocation
+          item.rdc.id
         ).subscribe({
           next: (response) => {
-            // Remove item from local array immediately
-            this.inventoryItems = this.inventoryItems.filter(inv => 
-              !(inv.product.id === item.product.id && inv.rdcLocation === item.rdcLocation)
+            this.inventoryItems = this.inventoryItems.filter(inv =>
+              !(inv.product?.id === item.product?.id && inv.rdc?.id === item.rdc?.id)
             );
-            this.lowStockItems = this.lowStockItems.filter(inv => 
-              !(inv.product.id === item.product.id && inv.rdcLocation === item.rdcLocation)
+            this.lowStockItems = this.lowStockItems.filter(inv =>
+              !(inv.product?.id === item.product?.id && inv.rdc?.id === item.rdc?.id)
             );
             this.cdr.detectChanges();
             Swal.fire('Deleted!', 'Inventory record deleted successfully', 'success');

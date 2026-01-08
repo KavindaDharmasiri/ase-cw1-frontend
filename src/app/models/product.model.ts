@@ -2,7 +2,7 @@ export interface Product {
   id?: number;
   name: string;
   description: string;
-  category: string;
+  category: any;
   subcategory?: string;
   sku?: string;
   brand?: string;

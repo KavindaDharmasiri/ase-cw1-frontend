@@ -9,23 +9,23 @@ export class InventoryService {
 
   constructor(private http: HttpClient) {}
 
-  getInventoryByRdc(rdcLocation: string): Observable<Inventory[]> {
-    return this.http.get<Inventory[]>(`${this.apiUrl}/rdc/${rdcLocation}`);
+  getInventoryByRdc(rdcId: number): Observable<Inventory[]> {
+    return this.http.get<Inventory[]>(`${this.apiUrl}/rdc/${rdcId}`);
   }
 
   getAllInventory(): Observable<Inventory[]> {
     return this.http.get<Inventory[]>(this.apiUrl);
   }
 
-  updateStock(productId: number, rdcLocation: string, newStock: number): Observable<Inventory> {
+  updateStock(productId: number, rdcId: number, newStock: number): Observable<Inventory> {
     return this.http.put<Inventory>(`${this.apiUrl}/update`, null, {
-      params: { productId: productId.toString(), rdcLocation, newStock: newStock.toString() }
+      params: { productId: productId.toString(), rdcId: rdcId.toString(), newStock: newStock.toString() }
     });
   }
 
-  transferStock(productId: number, fromRdc: string, toRdc: string, quantity: number): Observable<Inventory> {
+  transferStock(productId: number, fromRdcId: number, toRdcId: number, quantity: number): Observable<Inventory> {
     return this.http.post<Inventory>(`${this.apiUrl}/transfer`, null, {
-      params: { productId: productId.toString(), fromRdc, toRdc, quantity: quantity.toString() }
+      params: { productId: productId.toString(), fromRdcId: fromRdcId.toString(), toRdcId: toRdcId.toString(), quantity: quantity.toString() }
     });
   }
 
@@ -33,12 +33,12 @@ export class InventoryService {
     return this.http.get<Inventory[]>(`${this.apiUrl}/low-stock`);
   }
 
-  getLowStockItemsByRdc(rdcLocation: string): Observable<Inventory[]> {
-    return this.http.get<Inventory[]>(`${this.apiUrl}/low-stock/rdc/${rdcLocation}`);
+  getLowStockItemsByRdc(rdcId: number): Observable<Inventory[]> {
+    return this.http.get<Inventory[]>(`${this.apiUrl}/low-stock/rdc/${rdcId}`);
   }
 
-  deleteInventoryByProductAndRdc(productId: number, rdcLocation: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/product/${productId}/rdc/${rdcLocation}`, { responseType: 'text' });
+  deleteInventoryByProductAndRdc(productId: number, rdcId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/product/${productId}/rdc/${rdcId}`, { responseType: 'text' });
   }
 
   deleteInventoryByProduct(productId: number): Observable<any> {

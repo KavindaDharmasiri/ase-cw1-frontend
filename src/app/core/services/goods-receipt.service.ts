@@ -7,27 +7,27 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class GoodsReceiptService {
-  private apiUrl = `${environment.apiUrl}/goods-receipt`;
+  private apiUrl = `${environment.apiUrl}/procurement`;
 
   constructor(private http: HttpClient) {}
 
   getAllGoodsReceiptNotes(): Observable<any[]> {
-    return this.http.get<any[]>(this.apiUrl);
+    return this.http.get<any[]>(`${this.apiUrl}/grn`);
   }
 
   getGoodsReceiptNoteById(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`);
+    return this.http.get<any>(`${this.apiUrl}/grn/${id}`);
   }
 
-  createGoodsReceiptNote(grn: any): Observable<any> {
-    return this.http.post<any>(this.apiUrl, grn);
+  createGoodsReceiptNote(grn: any): Observable<string> {
+    return this.http.post<string>(`${this.apiUrl}/grn`, grn, { responseType: 'text' as 'json' });
   }
 
   getGrnsByRdc(rdcId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/rdc/${rdcId}`);
+    return this.http.get<any[]>(`${environment.apiUrl}/goods-receipt/rdc/${rdcId}`);
   }
 
   getGrnsByPurchaseOrder(poId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/purchase-order/${poId}`);
+    return this.http.get<any[]>(`${environment.apiUrl}/goods-receipt/purchase-order/${poId}`);
   }
 }

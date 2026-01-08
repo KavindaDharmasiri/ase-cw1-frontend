@@ -20,12 +20,12 @@ export class ProcurementService {
     return this.http.get<PurchaseOrder>(`${this.apiUrl}/purchase-orders/${id}`);
   }
 
-  createPurchaseOrder(purchaseOrder: any): Observable<PurchaseOrder> {
-    return this.http.post<PurchaseOrder>(`${this.apiUrl}/purchase-orders`, purchaseOrder);
+  createPurchaseOrder(purchaseOrder: any): Observable<string> {
+    return this.http.post<string>(`${this.apiUrl}/purchase-orders`, purchaseOrder, { responseType: 'text' as 'json' });
   }
 
-  updatePurchaseOrderStatus(id: number, status: POStatus): Observable<PurchaseOrder> {
-    return this.http.put<PurchaseOrder>(`${this.apiUrl}/purchase-orders/${id}/status?status=${status}`, {});
+  updatePurchaseOrderStatus(id: number, status: POStatus): Observable<string> {
+    return this.http.put<string>(`${this.apiUrl}/purchase-orders/${id}/status?status=${status}`, {}, { responseType: 'text' as 'json' });
   }
 
   getPurchaseOrdersByStatus(status: POStatus): Observable<PurchaseOrder[]> {
