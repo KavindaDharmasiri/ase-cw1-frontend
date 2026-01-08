@@ -111,10 +111,52 @@ import Swal from 'sweetalert2';
               <label>Role</label>
               <select [(ngModel)]="newUser.role" name="role" required>
                 <option value="">Select Role</option>
+                <option value="RETAILER">Retailer</option>
                 <option value="RDC_STAFF">RDC Staff</option>
                 <option value="LOGISTICS">Logistics</option>
                 <option value="HEAD_OFFICE_MANAGER">HO Manager</option>
               </select>
+            </div>
+            
+            <!-- Customer-specific fields for RETAILER role -->
+            <div *ngIf="newUser.role === 'RETAILER'" class="customer-fields">
+              <div class="form-group">
+                <label>Business Name</label>
+                <input type="text" [(ngModel)]="newUser.businessName" name="businessName" required>
+              </div>
+              <div class="form-group">
+                <label>District</label>
+                <select [(ngModel)]="newUser.district" name="district" required>
+                  <option value="">Select District</option>
+                  <option value="Colombo">Colombo</option>
+                  <option value="Kandy">Kandy</option>
+                  <option value="Galle">Galle</option>
+                  <option value="Jaffna">Jaffna</option>
+                  <option value="Batticaloa">Batticaloa</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Servicing RDC</label>
+                <select [(ngModel)]="newUser.servicingRdc" name="servicingRdc" required>
+                  <option value="">Select RDC</option>
+                  <option value="1">North RDC</option>
+                  <option value="2">South RDC</option>
+                  <option value="3">East RDC</option>
+                  <option value="4">West RDC</option>
+                  <option value="5">Central RDC</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Payment Terms</label>
+                <select [(ngModel)]="newUser.paymentType" name="paymentType" required>
+                  <option value="CASH">Cash</option>
+                  <option value="CREDIT">Credit</option>
+                </select>
+              </div>
+              <div *ngIf="newUser.paymentType === 'CREDIT'" class="form-group">
+                <label>Credit Limit (Rs.)</label>
+                <input type="number" [(ngModel)]="newUser.creditLimit" name="creditLimit" step="0.01">
+              </div>
             </div>
             <div class="form-group">
               <label>RDC Assignment</label>
@@ -165,6 +207,47 @@ import Swal from 'sweetalert2';
                 <option value="LOGISTICS">Logistics</option>
                 <option value="HEAD_OFFICE_MANAGER">HO Manager</option>
               </select>
+            </div>
+            
+            <!-- Customer-specific fields for RETAILER role -->
+            <div *ngIf="editingUser.role === 'RETAILER'" class="customer-fields">
+              <div class="form-group">
+                <label>Business Name</label>
+                <input type="text" [(ngModel)]="editingUser.businessName" name="businessName" required>
+              </div>
+              <div class="form-group">
+                <label>District</label>
+                <select [(ngModel)]="editingUser.district" name="district" required>
+                  <option value="">Select District</option>
+                  <option value="Colombo">Colombo</option>
+                  <option value="Kandy">Kandy</option>
+                  <option value="Galle">Galle</option>
+                  <option value="Jaffna">Jaffna</option>
+                  <option value="Batticaloa">Batticaloa</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Servicing RDC</label>
+                <select [(ngModel)]="editingUser.servicingRdc" name="servicingRdc" required>
+                  <option value="">Select RDC</option>
+                  <option value="1">North RDC</option>
+                  <option value="2">South RDC</option>
+                  <option value="3">East RDC</option>
+                  <option value="4">West RDC</option>
+                  <option value="5">Central RDC</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Payment Terms</label>
+                <select [(ngModel)]="editingUser.paymentType" name="paymentType" required>
+                  <option value="CASH">Cash</option>
+                  <option value="CREDIT">Credit</option>
+                </select>
+              </div>
+              <div *ngIf="editingUser.paymentType === 'CREDIT'" class="form-group">
+                <label>Credit Limit (Rs.)</label>
+                <input type="number" [(ngModel)]="editingUser.creditLimit" name="creditLimit" step="0.01">
+              </div>
             </div>
             <div class="form-actions">
               <button type="button" class="cancel-btn" (click)="showEditUser = false">Cancel</button>
@@ -342,10 +425,32 @@ import Swal from 'sweetalert2';
       background: white;
       border-radius: 10px;
       padding: 2rem;
-      width: 90%;
-      max-width: 500px;
+      width: 95%;
+      max-width: 600px;
       max-height: 90vh;
       overflow-y: auto;
+    }
+
+    @media (max-width: 768px) {
+      .modal-content {
+        width: 95%;
+        padding: 1rem;
+        max-height: 95vh;
+      }
+      
+      .form-group {
+        margin-bottom: 0.75rem;
+      }
+      
+      .form-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .cancel-btn, .submit-btn {
+        width: 100%;
+        padding: 0.75rem;
+      }
     }
 
     .modal-header {
@@ -435,7 +540,12 @@ export class HoUsersComponent implements OnInit {
     username: '',
     role: '',
     rdc: '',
-    password: ''
+    password: '',
+    businessName: '',
+    district: '',
+    servicingRdc: '',
+    paymentType: 'CASH',
+    creditLimit: 0
   };
 
   get filteredUsers() {
@@ -462,7 +572,13 @@ export class HoUsersComponent implements OnInit {
           ...user,
           status: user.enabled ? 'Active' : 'Inactive',
           lastLogin: user.lastLogin ? new Date(user.lastLogin) : null,
-          rdc: 'N/A' // Default since not in backend
+          rdc: 'N/A', // Default since not in backend
+          // Initialize customer fields with defaults
+          businessName: user.businessName || '',
+          district: user.district || '',
+          servicingRdc: user.servicingRdcId || '',
+          paymentType: user.paymentType || 'CASH',
+          creditLimit: user.creditLimit || 0
         }));
         console.log('Users after mapping:', this.users);
         this.updateStats();
@@ -483,12 +599,30 @@ export class HoUsersComponent implements OnInit {
   }
 
   editUser(user: any): void {
-    this.editingUser = { ...user };
+    this.editingUser = { 
+      ...user,
+      // Ensure customer fields are available for editing
+      businessName: user.businessName || '',
+      district: user.district || '',
+      servicingRdc: user.servicingRdc || '',
+      paymentType: user.paymentType || 'CASH',
+      creditLimit: user.creditLimit || 0
+    };
     this.showEditUser = true;
   }
 
   updateUser(): void {
-    this.http.put(`${environment.apiUrl}/admin/users/${this.editingUser.id}`, this.editingUser).subscribe({
+    const userData = {
+      ...this.editingUser,
+      // Include customer-specific fields for RETAILER
+      businessName: this.editingUser.role === 'RETAILER' ? this.editingUser.businessName : null,
+      district: this.editingUser.role === 'RETAILER' ? this.editingUser.district : null,
+      servicingRdcId: this.editingUser.role === 'RETAILER' ? this.editingUser.servicingRdc : null,
+      paymentType: this.editingUser.role === 'RETAILER' ? this.editingUser.paymentType : null,
+      creditLimit: this.editingUser.role === 'RETAILER' && this.editingUser.paymentType === 'CREDIT' ? this.editingUser.creditLimit : 0
+    };
+    
+    this.http.put(`${environment.apiUrl}/admin/users/${this.editingUser.id}`, userData).subscribe({
       next: () => {
         Swal.fire('Success', 'User updated successfully', 'success');
         this.showEditUser = false;
@@ -506,7 +640,13 @@ export class HoUsersComponent implements OnInit {
       email: this.newUser.email,
       username: this.newUser.username,
       password: this.newUser.password,
-      role: this.newUser.role
+      role: this.newUser.role,
+      // Customer-specific fields for RETAILER
+      businessName: this.newUser.role === 'RETAILER' ? this.newUser.businessName : null,
+      district: this.newUser.role === 'RETAILER' ? this.newUser.district : null,
+      servicingRdcId: this.newUser.role === 'RETAILER' ? this.newUser.servicingRdc : null,
+      paymentType: this.newUser.role === 'RETAILER' ? this.newUser.paymentType : null,
+      creditLimit: this.newUser.role === 'RETAILER' && this.newUser.paymentType === 'CREDIT' ? this.newUser.creditLimit : 0
     };
 
     this.http.post(`${environment.apiUrl}/auth/register`, userData, { responseType: 'text' }).subscribe({
@@ -514,7 +654,7 @@ export class HoUsersComponent implements OnInit {
         console.log('Registration response:', response);
         Swal.fire('Success', 'User created successfully', 'success');
         this.showCreateUser = false;
-        this.newUser = { fullName: '', email: '', username: '', role: '', rdc: '', password: '' };
+        this.newUser = { fullName: '', email: '', username: '', role: '', rdc: '', password: '', businessName: '', district: '', servicingRdc: '', paymentType: 'CASH', creditLimit: 0 };
         this.loadUsers();
       },
       error: (error) => {

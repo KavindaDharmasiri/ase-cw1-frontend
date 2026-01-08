@@ -3,13 +3,23 @@ export interface Product {
   name: string;
   description: string;
   category: string;
+  subcategory?: string;
+  sku?: string;
+  brand?: string;
+  barcode?: string;
+  taxClass?: string;
+  weight?: number;
+  volume?: number;
+  status?: string;
+  purchasePrice?: number;
   price: number;
+  taxRate?: number;
   unit: string;
   imageUrl?: string;
   minStockLevel: number;
   createdAt?: string;
   updatedAt?: string;
-  orderQuantity?: number; // For cart functionality
+  orderQuantity?: number;
 }
 
 export interface ProductSearchParams {

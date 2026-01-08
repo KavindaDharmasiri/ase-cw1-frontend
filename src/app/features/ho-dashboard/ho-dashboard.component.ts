@@ -93,6 +93,14 @@ import { Router } from '@angular/router';
       <div class="quick-actions">
         <h2>Quick Actions</h2>
         <div class="action-grid">
+          <button class="action-btn" (click)="navigateTo('/user-management')">
+            <div class="btn-icon">👥</div>
+            <div class="btn-text">User Management</div>
+          </button>
+          <button class="action-btn" (click)="navigateTo('/system-checkpoint')">
+            <div class="btn-icon">✅</div>
+            <div class="btn-text">System Checkpoint</div>
+          </button>
           <button class="action-btn" (click)="navigateTo('/ho-reports')">
             <div class="btn-icon">📈</div>
             <div class="btn-text">View Reports</div>

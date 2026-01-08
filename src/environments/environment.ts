@@ -36,6 +36,31 @@ export const environment = {
     },
     reports: {
       base: '/reports'
+    },
+    suppliers: {
+      base: '/suppliers'
+    },
+    procurement: {
+      base: '/procurement'
+    },
+    warehouse: {
+      base: '/warehouse'
+    },
+    vehicles: {
+      base: '/vehicles'
+    },
+    drivers: {
+      base: '/drivers'
+    },
+    goodsReceipt: {
+      base: '/goods-receipt'
+    },
+    driverSettlements: {
+      base: '/driver-settlements'
+    },
+    customers: {
+      base: '/customers',
+      rdcs: '/customers/rdcs'
     }
   }
 };

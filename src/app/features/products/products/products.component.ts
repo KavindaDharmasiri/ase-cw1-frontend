@@ -63,6 +63,12 @@ import Swal from 'sweetalert2';
             <label>Product Name *</label>
             <input type="text" placeholder="Enter product name" [(ngModel)]="currentProduct.name" name="name" required>
             
+            <label>SKU/Item Code</label>
+            <input type="text" placeholder="Auto-generated if empty" [(ngModel)]="currentProduct.sku" name="sku">
+            
+            <label>Brand</label>
+            <input type="text" placeholder="Enter brand name (optional)" [(ngModel)]="currentProduct.brand" name="brand">
+            
             <label>Description</label>
             <textarea placeholder="Enter product description" [(ngModel)]="currentProduct.description" name="description"></textarea>
             
@@ -72,11 +78,23 @@ import Swal from 'sweetalert2';
               <option *ngFor="let category of categories" [value]="category">{{category}}</option>
             </select>
             
-            <label>Price *</label>
-            <input type="number" placeholder="Enter price" [(ngModel)]="currentProduct.price" name="price" step="0.01" required>
+            <label>Selling Price *</label>
+            <input type="number" placeholder="Enter selling price" [(ngModel)]="currentProduct.price" name="price" step="0.01" required>
+            
+            <label>Purchase Price</label>
+            <input type="number" placeholder="Auto-calculated if empty" [(ngModel)]="currentProduct.purchasePrice" name="purchasePrice" step="0.01">
+            
+            <label>Tax Rate (%)</label>
+            <input type="number" placeholder="0" [(ngModel)]="currentProduct.taxRate" name="taxRate" step="0.01" min="0" max="100">
             
             <label>Unit *</label>
-            <input type="text" placeholder="e.g., kg, pieces, liters" [(ngModel)]="currentProduct.unit" name="unit" required>
+            <select [(ngModel)]="currentProduct.unit" name="unit" required>
+              <option value="">Select Unit</option>
+              <option value="pcs">Pieces</option>
+              <option value="kg">Kilograms</option>
+              <option value="liters">Liters</option>
+              <option value="boxes">Boxes</option>
+            </select>
             
             <label>Image</label>
             <input type="file" accept="image/*" (change)="onImageSelected($event)" name="image">

@@ -39,6 +39,15 @@ import { HoUsersComponent } from './features/ho-users/ho-users.component';
 import { HoConfigComponent } from './features/ho-config/ho-config.component';
 import { RDCManagementComponent } from './features/rdc-management/rdc-management.component';
 import { DeliveryZoneManagementComponent } from './features/delivery-zone-management/delivery-zone-management.component';
+import { SupplierManagementComponent } from './features/supplier-management/supplier-management.component';
+import { ProcurementComponent } from './features/procurement/procurement.component';
+import { VehicleManagementComponent } from './features/vehicle-management/vehicle-management.component';
+import { GoodsReceiptComponent } from './features/goods-receipt/goods-receipt.component';
+import { WarehouseComponent } from './features/warehouse/warehouse.component';
+import { PricingManagementComponent } from './features/pricing-management/pricing-management.component';
+import { DriverSettlementComponent } from './features/driver-settlement/driver-settlement.component';
+import { UserManagementComponent } from './features/user-management/user-management.component';
+import { SystemCheckpointComponent } from './features/system-checkpoint/system-checkpoint.component';
 import { AuthGuard } from './core/guards/auth.guard';
 import { RoleGuard } from './core/guards/role.guard';
 
@@ -84,6 +93,15 @@ export const routes: Routes = [
   { path: 'ho-config', component: HoConfigComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
   { path: 'rdc-management', component: RDCManagementComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
   { path: 'delivery-zones', component: DeliveryZoneManagementComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'suppliers', component: SupplierManagementComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'procurement', component: ProcurementComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'vehicles', component: VehicleManagementComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'goods-receipt', component: GoodsReceiptComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
+  { path: 'warehouse', component: WarehouseComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
+  { path: 'driver-settlements', component: DriverSettlementComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
+  { path: 'pricing', component: PricingManagementComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'user-management', component: UserManagementComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'system-checkpoint', component: SystemCheckpointComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
   { path: 'products', component: ProductsComponent, canActivate: [AuthGuard] },
   { path: 'product-catalog', component: ProductCatalogComponent, canActivate: [RoleGuard], data: { role: 'RETAILER' } },
   { path: 'real-time-tracking', component: RealTimeTrackingComponent, canActivate: [AuthGuard] },

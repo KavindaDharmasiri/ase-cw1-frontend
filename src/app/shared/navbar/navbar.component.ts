@@ -105,6 +105,42 @@ import { filter } from 'rxjs/operators';
           </svg>
           Delivery Zones
         </a>
+        <a *ngIf="userRole === 'HEAD_OFFICE_MANAGER'" routerLink="/suppliers" routerLinkActive="active" class="nav-link">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          Suppliers
+        </a>
+        <a *ngIf="userRole === 'HEAD_OFFICE_MANAGER'" routerLink="/procurement" routerLinkActive="active" class="nav-link">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+          </svg>
+          Procurement
+        </a>
+        <a *ngIf="userRole === 'HEAD_OFFICE_MANAGER'" routerLink="/vehicles" routerLinkActive="active" class="nav-link">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
+          </svg>
+          Vehicles
+        </a>
+        <a *ngIf="userRole === 'RDC_STAFF'" routerLink="/goods-receipt" routerLinkActive="active" class="nav-link">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 12l-4-4 1.41-1.41L11 12.17l6.59-6.59L19 7l-8 8z"/>
+          </svg>
+          Goods Receipt
+        </a>
+        <a *ngIf="userRole === 'RDC_STAFF'" routerLink="/warehouse" routerLinkActive="active" class="nav-link">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M22 9L12 2 2 9h3v13h2v-7h2v7h2v-7h2v7h2v-7h2v7h2v-7h2v7h3V9h3z"/>
+          </svg>
+          Warehouse
+        </a>
+        <a *ngIf="userRole === 'RDC_STAFF'" routerLink="/driver-settlements" routerLinkActive="active" class="nav-link">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+          </svg>
+          Settlements
+        </a>
         <a *ngIf="userRole === 'RETAILER'" routerLink="/cart" routerLinkActive="active" class="nav-link">
           <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
             <path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z"/>

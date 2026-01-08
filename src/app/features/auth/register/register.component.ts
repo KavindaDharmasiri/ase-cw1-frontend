@@ -11,6 +11,16 @@ interface RegisterRequest {
   password: string;
   fullName: string;
   role: string;
+  // Customer fields
+  businessType?: string;
+  district?: string;
+  servicingRdcId?: number;
+  paymentType?: string;
+  creditLimit?: number;
+  deliveryAddress?: string;
+  contactPerson?: string;
+  phone?: string;
+  gpsCoordinates?: string;
 }
 
 @Component({
@@ -88,6 +98,77 @@ interface RegisterRequest {
               Password
             </label>
             <input type="password" class="form-input" [(ngModel)]="registerData.password" name="password" required>
+          </div>
+          
+          <!-- Customer-specific fields for RETAILER role -->
+          <div *ngIf="registerData.role === 'RETAILER'" class="customer-fields">
+            <h3>Customer Details</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Business Type</label>
+                <select class="form-select" [(ngModel)]="registerData.businessType" name="businessType">
+                  <option value="">Select Type</option>
+                  <option value="RETAIL">Retail</option>
+                  <option value="SUPERMARKET">Supermarket</option>
+                  <option value="RESELLER">Reseller</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">District</label>
+                <select class="form-select" [(ngModel)]="registerData.district" name="district">
+                  <option value="">Select District</option>
+                  <option *ngFor="let district of districts" [value]="district">{{district}}</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Assigned RDC</label>
+                <select class="form-select" [(ngModel)]="registerData.servicingRdcId" name="servicingRdcId">
+                  <option value="">Select RDC</option>
+                  <option *ngFor="let rdc of rdcs" [value]="rdc.id">{{rdc.name}}</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Payment Method</label>
+                <select class="form-select" [(ngModel)]="registerData.paymentType" name="paymentType">
+                  <option value="">Select Method</option>
+                  <option value="CASH">Cash</option>
+                  <option value="CREDIT">Credit</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group" *ngIf="registerData.paymentType === 'CREDIT'">
+              <label class="form-label">Credit Limit</label>
+              <input type="number" class="form-input" [(ngModel)]="registerData.creditLimit" name="creditLimit" min="0" step="0.01">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Delivery Address</label>
+              <textarea class="form-input" [(ngModel)]="registerData.deliveryAddress" name="deliveryAddress" rows="2"></textarea>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Contact Person</label>
+                <input type="text" class="form-input" [(ngModel)]="registerData.contactPerson" name="contactPerson">
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Phone</label>
+                <input type="tel" class="form-input" [(ngModel)]="registerData.phone" name="phone">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">GPS Coordinates (Optional)</label>
+              <input type="text" class="form-input" [(ngModel)]="registerData.gpsCoordinates" name="gpsCoordinates" placeholder="Latitude, Longitude">
+            </div>
           </div>
           
           <button type="submit" class="btn btn-primary btn-full" [disabled]="!registerForm.form.valid">
@@ -204,6 +285,24 @@ interface RegisterRequest {
       text-decoration: underline;
     }
     
+    .customer-fields {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--gray-200);
+    }
+    
+    .customer-fields h3 {
+      color: var(--gray-800);
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    
+    textarea.form-input {
+      resize: vertical;
+      min-height: 60px;
+    }
+    
     @media (max-width: 640px) {
       .form-row {
         grid-template-columns: 1fr;
@@ -223,6 +322,13 @@ export class RegisterComponent {
     fullName: '',
     role: ''
   };
+  
+  districts = ['Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya', 'Galle', 'Matara', 'Hambantota'];
+  rdcs = [
+    { id: 1, name: 'Colombo RDC' },
+    { id: 2, name: 'Kandy RDC' },
+    { id: 3, name: 'Galle RDC' }
+  ];
   
   message = '';
   isError = false;
