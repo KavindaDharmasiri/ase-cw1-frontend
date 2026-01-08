@@ -12,6 +12,10 @@ export class ProductService {
     return this.http.get<Product[]>(`${environment.apiUrl}${environment.endpoints.products.base}`);
   }
 
+  getProductCatalogWithStock(rdcId: number): Observable<Product[]> {
+    return this.http.get<Product[]>(`${environment.apiUrl}${environment.endpoints.products.base}/catalog/${rdcId}`);
+  }
+
   getProductById(id: number): Observable<Product> {
     return this.http.get<Product>(`${environment.apiUrl}${environment.endpoints.products.base}/${id}`);
   }

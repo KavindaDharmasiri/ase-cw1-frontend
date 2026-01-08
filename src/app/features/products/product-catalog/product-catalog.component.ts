@@ -29,8 +29,9 @@ import Swal from 'sweetalert2';
       <div class="products-grid">
         <div *ngFor="let product of filteredProducts" class="product-card">
           <div class="product-image">
-            <img [src]="product.imageUrl || '/assets/default-product.png'" 
-                 [alt]="product.name" onerror="this.src='/assets/default-product.png'">
+            <img [src]="product.imageUrl" [alt]="product.name" 
+                 (error)="$event.target.style.display='none'" 
+                 [style.display]="product.imageUrl ? 'block' : 'none'">
           </div>
           
           <div class="product-info">
@@ -40,26 +41,26 @@ import Swal from 'sweetalert2';
               <span class="price">\${{product.price}}</span>
               <span class="unit">per {{product.unit}}</span>
               <div class="stock-info">
-                <span class="stock" [class.low-stock]="product.unit <= 10" [class.out-of-stock]="product.unit === 0">
-                  {{product.unit > 0 ? product.unit + ' in stock' : 'Out of stock'}}
+                <span class="stock" [class.low-stock]="product.availableStock <= 10" [class.out-of-stock]="product.availableStock === 0">
+                  {{product.availableStock > 0 ? product.availableStock + ' in stock' : 'Out of stock'}}
                 </span>
               </div>
             </div>
           </div>
 
-          <div class="product-actions" *ngIf="product.unit > 0">
+          <div class="product-actions" *ngIf="product.availableStock > 0">
             <div class="quantity-selector">
               <button (click)="decreaseQuantity(product)" class="qty-btn">-</button>
               <input type="number" [(ngModel)]="product.selectedQuantity" 
-                     [max]="product.unit" min="1" class="qty-input">
-              <button (click)="increaseQuantity(product)" [disabled]="product.selectedQuantity >= product.unit" class="qty-btn">+</button>
+                     [max]="product.availableStock" min="1" class="qty-input">
+              <button (click)="increaseQuantity(product)" [disabled]="product.selectedQuantity >= product.availableStock" class="qty-btn">+</button>
             </div>
-            <button (click)="addToCart(product)" [disabled]="product.selectedQuantity > product.unit" class="btn-add-cart">
+            <button (click)="addToCart(product)" [disabled]="product.selectedQuantity > product.availableStock" class="btn-add-cart">
               Add to Cart
             </button>
           </div>
           
-          <div class="product-actions out-of-stock" *ngIf="product.unit === 0">
+          <div class="product-actions out-of-stock" *ngIf="product.availableStock === 0">
             <span class="out-of-stock-text">Out of Stock</span>
           </div>
         </div>
@@ -137,7 +138,10 @@ export class ProductCatalogComponent implements OnInit {
   }
 
   loadProducts() {
-    this.productService.getAllProducts().subscribe({
+    // Get user's RDC ID (assuming RDC ID 1 for now - should get from user profile)
+    const rdcId = 1; // TODO: Get from authenticated user's assigned RDC
+    
+    this.productService.getProductCatalogWithStock(rdcId).subscribe({
       next: (products) => {
         this.products = products.map(p => ({...p, selectedQuantity: 1}));
         this.filteredProducts = [...this.products];
@@ -158,7 +162,7 @@ export class ProductCatalogComponent implements OnInit {
   }
 
   increaseQuantity(product: any) {
-    if (product.selectedQuantity < product.unit) {
+    if (product.selectedQuantity < product.availableStock) {
       product.selectedQuantity++;
     }
   }
@@ -170,11 +174,11 @@ export class ProductCatalogComponent implements OnInit {
   }
 
   addToCart(product: any) {
-    if (product.selectedQuantity > product.unit) {
+    if (product.selectedQuantity > product.availableStock) {
       Swal.fire({
         icon: 'error',
         title: 'Invalid Quantity',
-        text: `Only ${product.unit} items available in stock`
+        text: `Only ${product.availableStock} items available in stock`
       });
       return;
     }
