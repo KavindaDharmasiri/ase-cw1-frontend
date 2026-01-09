@@ -61,8 +61,6 @@ import Swal from 'sweetalert2';
               <p>{{report.description}}</p>
               <div class="report-actions">
                 <button class="view-btn" (click)="viewReport(report)">View</button>
-                <button class="export-btn" (click)="exportReport(report, 'pdf')">PDF</button>
-                <button class="export-btn" (click)="exportReport(report, 'excel')">Excel</button>
               </div>
             </div>
           </div>
@@ -77,8 +75,6 @@ import Swal from 'sweetalert2';
               <p>{{report.description}}</p>
               <div class="report-actions">
                 <button class="view-btn" (click)="viewReport(report)">View</button>
-                <button class="export-btn" (click)="exportReport(report, 'pdf')">PDF</button>
-                <button class="export-btn" (click)="exportReport(report, 'excel')">Excel</button>
               </div>
             </div>
           </div>
@@ -93,8 +89,6 @@ import Swal from 'sweetalert2';
               <p>{{report.description}}</p>
               <div class="report-actions">
                 <button class="view-btn" (click)="viewReport(report)">View</button>
-                <button class="export-btn" (click)="exportReport(report, 'pdf')">PDF</button>
-                <button class="export-btn" (click)="exportReport(report, 'excel')">Excel</button>
               </div>
             </div>
           </div>
@@ -109,8 +103,6 @@ import Swal from 'sweetalert2';
               <p>{{report.description}}</p>
               <div class="report-actions">
                 <button class="view-btn" (click)="viewReport(report)">View</button>
-                <button class="export-btn" (click)="exportReport(report, 'pdf')">PDF</button>
-                <button class="export-btn" (click)="exportReport(report, 'excel')">Excel</button>
               </div>
             </div>
           </div>
@@ -125,25 +117,7 @@ import Swal from 'sweetalert2';
               <p>{{report.description}}</p>
               <div class="report-actions">
                 <button class="view-btn" (click)="viewReport(report)">View</button>
-                <button class="export-btn" (click)="exportReport(report, 'pdf')">PDF</button>
-                <button class="export-btn" (click)="exportReport(report, 'excel')">Excel</button>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="scheduled-reports">
-        <h2>Scheduled Reports</h2>
-        <div class="schedule-list">
-          <div class="schedule-item" *ngFor="let schedule of scheduledReports">
-            <div class="schedule-info">
-              <h4>{{schedule.reportName}}</h4>
-              <p>{{schedule.frequency}} • Next: {{schedule.nextRun | date:'short'}}</p>
-            </div>
-            <div class="schedule-actions">
-              <button class="edit-btn" (click)="editSchedule(schedule)">Edit</button>
-              <button class="run-btn" (click)="runNow(schedule)">Run Now</button>
             </div>
           </div>
         </div>
@@ -329,24 +303,27 @@ export class HoReportsComponent implements OnInit {
   constructor(private http: HttpClient) {}
 
   salesReports = [
-    { id: 1, title: 'Sales Performance by RDC', description: 'Compare sales performance across all RDCs', endpoint: '/api/reports/sales' },
-    { id: 2, title: 'Dashboard Summary', description: 'Overall business metrics and KPIs', endpoint: '/api/reports/dashboard' },
-    { id: 3, title: 'Financial Report', description: 'Revenue and financial ledger summary', endpoint: '/api/reports/financial' },
-    { id: 4, title: 'Export Sales Data', description: 'Download sales data as CSV', endpoint: '/api/reports/sales/export' }
+    { id: 1, title: 'Sales Performance Dashboard', description: 'Comprehensive sales metrics and analytics', endpoint: '/reports/sales' },
+    { id: 2, title: 'Sales Trends Analysis', description: 'Monthly trends and growth patterns', endpoint: '/reports/sales' },
+    { id: 3, title: 'Category Performance', description: 'Sales breakdown by product categories', endpoint: '/reports/sales' },
+    { id: 4, title: 'Regional Sales Report', description: 'Performance analysis by geographic regions', endpoint: '/reports/sales' },
+    { id: 5, title: 'Top Products Report', description: 'Best performing products and revenue drivers', endpoint: '/reports/sales' },
+    { id: 6, title: 'Customer Segment Analysis', description: 'Sales performance by customer segments', endpoint: '/reports/sales' },
+    { id: 7, title: 'Export Sales Data', description: 'Download comprehensive sales data as CSV', endpoint: '/reports/sales/export' }
   ];
 
   inventoryReports = [
-    { id: 5, title: 'Inventory Summary', description: 'Current inventory levels and status', endpoint: '/api/reports/inventory' },
-    { id: 6, title: 'Low Stock Alert', description: 'Items requiring immediate restocking', endpoint: '/api/reports/inventory' },
-    { id: 7, title: 'Export Inventory Data', description: 'Download inventory report as CSV', endpoint: '/api/reports/inventory/export' },
-    { id: 8, title: 'Stock Movement Report', description: 'Track inventory movements and transfers', endpoint: '/api/reports/inventory' }
+    { id: 5, title: 'Inventory Summary', description: 'Current inventory levels and status', endpoint: '/reports/inventory' },
+    { id: 6, title: 'Low Stock Alert', description: 'Items requiring immediate restocking', endpoint: '/reports/inventory' },
+    { id: 7, title: 'Export Inventory Data', description: 'Download inventory report as CSV', endpoint: '/reports/inventory/export' },
+    { id: 8, title: 'Stock Movement Report', description: 'Track inventory movements and transfers', endpoint: '/reports/inventory' }
   ];
 
   deliveryReports = [
-    { id: 9, title: 'Delivery Performance', description: 'Delivery success rates and metrics', endpoint: '/api/reports/deliveries' },
-    { id: 10, title: 'Route Efficiency', description: 'Delivery route performance analysis', endpoint: '/api/reports/deliveries' },
-    { id: 11, title: 'Settlement Reports', description: 'Driver settlement and reconciliation', endpoint: '/api/reports/settlements' },
-    { id: 12, title: 'Logistics Overview', description: 'Complete logistics performance dashboard', endpoint: '/api/reports/deliveries' }
+    { id: 9, title: 'Delivery Performance', description: 'Delivery success rates and metrics', endpoint: '/reports/deliveries' },
+    { id: 10, title: 'Route Efficiency', description: 'Delivery route performance analysis', endpoint: '/reports/deliveries' },
+    { id: 11, title: 'Settlement Reports', description: 'Driver settlement and reconciliation', endpoint: '/reports/settlements' },
+    { id: 12, title: 'Logistics Overview', description: 'Complete logistics performance dashboard', endpoint: '/reports/deliveries' }
   ];
 
   staffReports = [
@@ -376,11 +353,47 @@ export class HoReportsComponent implements OnInit {
   }
 
   viewReport(report: any): void {
-    const apiUrl = `${environment.apiUrl}${report.endpoint}`;
+    let apiUrl = `${environment.apiUrl}${report.endpoint}`;
+    
+    // Add filters for sales reports
+    if (report.endpoint === '/reports/sales') {
+      const params = new URLSearchParams();
+      if (this.selectedRdc) params.append('rdc', this.selectedRdc);
+      if (this.selectedPeriod) {
+        const now = new Date();
+        let startDate, endDate;
+        
+        switch(this.selectedPeriod) {
+          case 'monthly':
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            break;
+          case 'quarterly':
+            const quarter = Math.floor(now.getMonth() / 3);
+            startDate = new Date(now.getFullYear(), quarter * 3, 1);
+            endDate = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
+            break;
+          case 'annual':
+            startDate = new Date(now.getFullYear(), 0, 1);
+            endDate = new Date(now.getFullYear(), 11, 31);
+            break;
+        }
+        
+        if (startDate && endDate) {
+          params.append('startDate', startDate.toISOString().slice(0, 19));
+          params.append('endDate', endDate.toISOString().slice(0, 19));
+        }
+      }
+      
+      if (params.toString()) {
+        apiUrl += '?' + params.toString();
+      }
+    }
+    
     this.http.get(apiUrl).subscribe({
       next: (data: any) => {
         this.reportData = data;
-        this.displayReport(report, data);
+        this.generateSalesPerformancePDF(report, data);
       },
       error: (error) => {
         Swal.fire('Error', 'Failed to load report data', 'error');
@@ -389,81 +402,304 @@ export class HoReportsComponent implements OnInit {
     });
   }
 
-  displayReport(report: any, data: any): void {
-    let htmlContent = '';
+  generateSalesPerformancePDF(report: any, data: any): void {
+    const { jsPDF } = (window as any).jspdf;
+    const doc = new jsPDF();
     
-    switch(report.id) {
-      case 1: // Sales Report
-        htmlContent = `
-          <div style="text-align: left;">
-            <h3>Sales Performance Report</h3>
-            <p><strong>Total Sales:</strong> LKR ${data.totalSales?.toFixed(2) || 0}</p>
-            <p><strong>Total Orders:</strong> ${data.totalOrders || 0}</p>
-            <p><strong>Average Order Value:</strong> LKR ${data.averageOrderValue?.toFixed(2) || 0}</p>
-          </div>
-        `;
-        break;
-      case 2: // Dashboard
-        htmlContent = `
-          <div style="text-align: left;">
-            <h3>Dashboard Summary</h3>
-            <p><strong>Total Orders:</strong> ${data.totalOrders || 0}</p>
-            <p><strong>Total Products:</strong> ${data.totalProducts || 0}</p>
-            <p><strong>Total Revenue:</strong> LKR ${data.totalRevenue?.toFixed(2) || 0}</p>
-            <p><strong>Total Deliveries:</strong> ${data.totalDeliveries || 0}</p>
-            <p><strong>Low Stock Items:</strong> ${data.lowStockItems || 0}</p>
-          </div>
-        `;
-        break;
-      case 3: // Financial
-        htmlContent = `
-          <div style="text-align: left;">
-            <h3>Financial Report</h3>
-            <p><strong>Total Revenue:</strong> LKR ${data.totalRevenue?.toFixed(2) || 0}</p>
-            <p><strong>Total Cash:</strong> LKR ${data.totalCash?.toFixed(2) || 0}</p>
-            <p><strong>Ledger Entries:</strong> ${data.ledgerEntries || 0}</p>
-          </div>
-        `;
-        break;
-      case 5: // Inventory
-        htmlContent = `
-          <div style="text-align: left;">
-            <h3>Inventory Report</h3>
-            <p><strong>Total Items:</strong> ${data.totalItems || 0}</p>
-            <p><strong>Low Stock Items:</strong> ${data.lowStockItems || 0}</p>
-            <p><strong>Low Stock Percentage:</strong> ${data.lowStockPercentage?.toFixed(1) || 0}%</p>
-          </div>
-        `;
-        break;
-      case 9: // Delivery
-        htmlContent = `
-          <div style="text-align: left;">
-            <h3>Delivery Performance</h3>
-            <p><strong>Total Deliveries:</strong> ${data.totalDeliveries || 0}</p>
-            <p><strong>Delivered Count:</strong> ${data.deliveredCount || 0}</p>
-            <p><strong>Delivery Rate:</strong> ${data.deliveryRate?.toFixed(1) || 0}%</p>
-          </div>
-        `;
-        break;
-      case 11: // Settlements
-        htmlContent = `
-          <div style="text-align: left;">
-            <h3>Settlement Report</h3>
-            <p><strong>Total Settlements:</strong> ${data.totalSettlements || 0}</p>
-            <p><strong>Pending Settlements:</strong> ${data.pendingSettlements || 0}</p>
-            <p><strong>Completed Settlements:</strong> ${data.completedSettlements || 0}</p>
-          </div>
-        `;
-        break;
-      default:
-        htmlContent = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    // Header with gradient background
+    doc.setFillColor(30, 58, 138);
+    doc.rect(0, 0, 210, 50, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.text('IslandLink Distribution System', 105, 20, { align: 'center' });
+    doc.setFontSize(18);
+    doc.text('Sales Performance Analytics Report', 105, 35, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text(report.title, 105, 45, { align: 'center' });
+    
+    // Report info section
+    doc.setFillColor(239, 246, 255);
+    doc.rect(10, 55, 190, 25, 'F');
+    doc.setTextColor(31, 41, 55);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 15, 65);
+    doc.text(`Period: ${this.selectedPeriod.toUpperCase()}`, 15, 72);
+    if (this.selectedRdc) {
+      doc.text(`RDC Filter: ${this.selectedRdc}`, 120, 65);
     }
+    doc.text(`Report Type: ${report.title}`, 120, 72);
+    
+    let yPos = 90;
+    
+    // Executive Summary
+    doc.setFillColor(16, 185, 129);
+    doc.rect(10, yPos - 5, 190, 15, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.text('EXECUTIVE SUMMARY', 15, yPos + 5);
+    
+    doc.setTextColor(31, 41, 55);
+    yPos += 25;
+    
+    // Key metrics in colored boxes
+    const metrics = [
+      { label: 'Total Sales Revenue', value: `LKR ${data.totalSales?.toFixed(2) || 0}`, color: [254, 249, 195] },
+      { label: 'Total Orders Processed', value: `${data.totalOrders || 0}`, color: [220, 252, 231] },
+      { label: 'Average Order Value', value: `LKR ${data.averageOrderValue?.toFixed(2) || 0}`, color: [219, 234, 254] },
+      { label: 'Revenue Growth Rate', value: `${data.trends?.growthRate || 0}%`, color: [254, 215, 215] }
+    ];
+    
+    metrics.forEach((metric, index) => {
+      doc.setFillColor(...metric.color);
+      doc.rect(15, yPos - 3, 180, 12, 'F');
+      doc.setFontSize(11);
+      doc.text(`${metric.label}: ${metric.value}`, 20, yPos + 5);
+      yPos += 15;
+    });
+    
+    yPos += 10;
+    
+    // Sales Trends Analysis
+    if (data.trends) {
+      doc.setFillColor(147, 51, 234);
+      doc.rect(10, yPos - 5, 190, 15, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(12);
+      doc.text('SALES TRENDS ANALYSIS', 15, yPos + 5);
+      
+      doc.setTextColor(31, 41, 55);
+      yPos += 20;
+      
+      doc.text('Performance vs Previous Period:', 20, yPos);
+      yPos += 10;
+      doc.text(`• Current Period Revenue: LKR ${data.trends.currentMonth?.toFixed(2) || 0}`, 25, yPos);
+      yPos += 8;
+      doc.text(`• Previous Period Revenue: LKR ${data.trends.previousMonth?.toFixed(2) || 0}`, 25, yPos);
+      yPos += 8;
+      doc.text(`• Growth Rate: ${data.trends.growthRate || 0}%`, 25, yPos);
+      yPos += 8;
+      doc.text(`• Monthly Target: LKR ${data.trends.monthlyTarget?.toFixed(2) || 0}`, 25, yPos);
+      yPos += 8;
+      doc.text(`• Target Achievement: ${data.trends.targetAchievement || 0}%`, 25, yPos);
+      yPos += 15;
+    }
+    
+    // Category Performance
+    if (data.categoryBreakdown) {
+      doc.setFillColor(59, 130, 246);
+      doc.rect(10, yPos - 5, 190, 15, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.text('CATEGORY PERFORMANCE BREAKDOWN', 15, yPos + 5);
+      
+      doc.setTextColor(31, 41, 55);
+      yPos += 20;
+      
+      Object.entries(data.categoryBreakdown).forEach(([category, details]: [string, any]) => {
+        const categoryName = category.charAt(0).toUpperCase() + category.slice(1).replace(/([A-Z])/g, ' $1');
+        doc.text(`${categoryName}:`, 20, yPos);
+        yPos += 8;
+        doc.text(`  • Revenue: LKR ${details.revenue?.toFixed(2) || 0}`, 25, yPos);
+        yPos += 6;
+        doc.text(`  • Orders: ${details.orders || 0}`, 25, yPos);
+        yPos += 6;
+        doc.text(`  • Growth Rate: ${details.growthRate || 0}%`, 25, yPos);
+        yPos += 6;
+        doc.text(`  • Avg Order Value: LKR ${details.avgOrderValue?.toFixed(2) || 0}`, 25, yPos);
+        yPos += 10;
+      });
+    }
+    
+    // Add new page for additional content
+    doc.addPage();
+    yPos = 20;
+    
+    // Regional Performance
+    if (data.regional) {
+      doc.setFillColor(245, 158, 11);
+      doc.rect(10, yPos - 5, 190, 15, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(12);
+      doc.text('REGIONAL PERFORMANCE ANALYSIS', 15, yPos + 5);
+      
+      doc.setTextColor(31, 41, 55);
+      yPos += 20;
+      
+      Object.entries(data.regional).forEach(([region, details]: [string, any]) => {
+        const regionName = region.charAt(0).toUpperCase() + region.slice(1);
+        doc.text(`${regionName} Region:`, 20, yPos);
+        yPos += 8;
+        doc.text(`  • Revenue: LKR ${details.revenue?.toFixed(2) || 0}`, 25, yPos);
+        yPos += 6;
+        doc.text(`  • Orders: ${details.orders || 0}`, 25, yPos);
+        yPos += 6;
+        doc.text(`  • Growth Rate: ${details.growthRate || 0}%`, 25, yPos);
+        yPos += 6;
+        doc.text(`  • Market Share: ${details.marketShare || 0}%`, 25, yPos);
+        yPos += 10;
+      });
+    }
+    
+    // Top Products
+    if (data.topProducts) {
+      doc.setFillColor(168, 85, 247);
+      doc.rect(10, yPos - 5, 190, 15, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.text('TOP PERFORMING PRODUCTS', 15, yPos + 5);
+      
+      doc.setTextColor(31, 41, 55);
+      yPos += 20;
+      
+      data.topProducts.forEach((product: any, index: number) => {
+        doc.text(`${index + 1}. ${product.name}`, 20, yPos);
+        yPos += 8;
+        doc.text(`   Category: ${product.category} | Revenue: LKR ${product.revenue?.toFixed(2) || 0} | Units: ${product.units || 0}`, 25, yPos);
+        yPos += 12;
+      });
+    }
+    
+    // Customer Segments
+    if (data.customerSegments) {
+      doc.setFillColor(220, 38, 127);
+      doc.rect(10, yPos - 5, 190, 15, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.text('CUSTOMER SEGMENT ANALYSIS', 15, yPos + 5);
+      
+      doc.setTextColor(31, 41, 55);
+      yPos += 20;
+      
+      Object.entries(data.customerSegments).forEach(([segment, details]: [string, any]) => {
+        const segmentName = segment.charAt(0).toUpperCase() + segment.slice(1);
+        doc.text(`${segmentName} Customers:`, 20, yPos);
+        yPos += 8;
+        doc.text(`  • Percentage: ${details.percentage || 0}%`, 25, yPos);
+        yPos += 6;
+        doc.text(`  • Avg Order Value: LKR ${details.avgOrderValue?.toFixed(2) || 0}`, 25, yPos);
+        yPos += 6;
+        doc.text(`  • Total Revenue: LKR ${details.revenue?.toFixed(2) || 0}`, 25, yPos);
+        yPos += 10;
+      });
+    }
+    
+    // Performance Metrics
+    if (data.performance) {
+      doc.setFillColor(34, 197, 94);
+      doc.rect(10, yPos - 5, 190, 15, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.text('KEY PERFORMANCE INDICATORS', 15, yPos + 5);
+      
+      doc.setTextColor(31, 41, 55);
+      yPos += 20;
+      
+      const kpis = [
+        { label: 'Revenue Growth Rate', value: `${data.performance.revenueGrowthRate || 0}%` },
+        { label: 'Order Conversion Rate', value: `${data.performance.orderConversionRate || 0}%` },
+        { label: 'Customer Retention Rate', value: `${data.performance.customerRetentionRate || 0}%` },
+        { label: 'Average Items per Order', value: `${data.performance.averageItemsPerOrder || 0}` },
+        { label: 'Repeat Customer Rate', value: `${data.performance.repeatCustomerRate || 0}%` },
+        { label: 'Cart Abandonment Rate', value: `${data.performance.cartAbandonmentRate || 0}%` }
+      ];
+      
+      kpis.forEach(kpi => {
+        doc.text(`• ${kpi.label}: ${kpi.value}`, 20, yPos);
+        yPos += 8;
+      });
+    }
+    
+    // Footer
+    doc.setFillColor(75, 85, 99);
+    doc.rect(0, 270, 210, 27, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.text('IslandLink Distribution System - Sales Performance Analytics', 105, 280, { align: 'center' });
+    doc.text(`Generated by: HEAD_OFFICE_MANAGER | ${new Date().toLocaleString()}`, 105, 290, { align: 'center' });
+    
+    // Display PDF
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    
+    Swal.fire({
+      title: `${report.title} - Sales Performance Report`,
+      html: `<iframe src="${pdfUrl}" width="100%" height="600px" style="border: none;"></iframe>`,
+      width: '90%',
+      showCloseButton: true,
+      showConfirmButton: false,
+      didDestroy: () => {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    });
+  }
+  generateDetailedPDF(report: any, data: any): void {
+    // Fallback for non-sales reports
+    if (report.endpoint === '/reports/sales') {
+      this.generateSalesPerformancePDF(report, data);
+      return;
+    }
+    
+    const { jsPDF } = (window as any).jspdf;
+    const doc = new jsPDF();
+    
+    // Standard report generation for other report types
+    doc.setFillColor(30, 58, 138);
+    doc.rect(0, 0, 210, 45, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.text('IslandLink Distribution System', 105, 20, { align: 'center' });
+    doc.setFontSize(16);
+    doc.text(report.title, 105, 35, { align: 'center' });
+    
+    doc.setTextColor(31, 41, 55);
+    doc.setFillColor(239, 246, 255);
+    doc.rect(10, 50, 190, 25, 'F');
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 15, 60);
+    doc.text(`Period: ${this.selectedPeriod}`, 15, 67);
+    if (this.selectedRdc) {
+      doc.text(`RDC: ${this.selectedRdc}`, 15, 74);
+    }
+    
+    let yPos = 90;
+    
+    // Basic data display for other reports
+    Object.entries(data).forEach(([key, value]) => {
+      if (typeof value === 'object' && value !== null) {
+        doc.setFontSize(12);
+        doc.text(`${key.toUpperCase()}:`, 20, yPos);
+        yPos += 10;
+        Object.entries(value as any).forEach(([subKey, subValue]) => {
+          doc.setFontSize(10);
+          doc.text(`  ${subKey}: ${subValue}`, 25, yPos);
+          yPos += 8;
+        });
+        yPos += 5;
+      } else {
+        doc.setFontSize(10);
+        doc.text(`${key}: ${value}`, 20, yPos);
+        yPos += 10;
+      }
+    });
+    
+    // Footer
+    doc.setFillColor(75, 85, 99);
+    doc.rect(0, 270, 210, 27, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.text('IslandLink Distribution System - Report Generation', 105, 280, { align: 'center' });
+    doc.text(`Generated by: HEAD_OFFICE_MANAGER`, 105, 290, { align: 'center' });
+    
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
     
     Swal.fire({
       title: report.title,
-      html: htmlContent,
-      width: '600px',
-      confirmButtonText: 'Close'
+      html: `<iframe src="${pdfUrl}" width="100%" height="600px" style="border: none;"></iframe>`,
+      width: '90%',
+      showCloseButton: true,
+      showConfirmButton: false,
+      didDestroy: () => {
+        URL.revokeObjectURL(pdfUrl);
+      }
     });
   }
 
