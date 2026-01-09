@@ -1,6 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { DeliveryRouteService, DeliveryRoute, CreateRouteRequest, AssignDriverRequest } from '../../core/services/delivery-route.service';
 import Swal from 'sweetalert2';
 
@@ -62,9 +64,9 @@ import Swal from 'sweetalert2';
             </div>
 
             <div class="route-actions">
-              <button class="optimize-btn" (click)="optimizeRoute(route)">Optimize</button>
               <button class="assign-btn" (click)="assignDriver(route)">Assign Driver</button>
-              <button class="dispatch-btn" *ngIf="route.status === 'PLANNED'" (click)="dispatchRoute(route)">Dispatch</button>
+              <button class="assign-orders-btn" (click)="assignOrders(route)">Assign Orders</button>
+              <button class="dispatch-btn" *ngIf="route.status === 'PLANNED' && route.driverName && route.vehicleNumber" (click)="dispatchRoute(route)">Dispatch Route</button>
             </div>
           </div>
         </div>
@@ -204,10 +206,11 @@ import Swal from 'sweetalert2';
     .route-point { font-size: 12px; margin: 4px 0; }
     .route-actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .route-actions button { padding: 8px 16px; border: none; border-radius: var(--border-radius-md); cursor: pointer; font-size: 12px; }
-    .optimize-btn { background: var(--purple-500); color: white; }
-    .assign-btn { background: var(--blue-500); color: white; }
-    .edit-btn { background: var(--gray-500); color: white; }
-    .dispatch-btn { background: var(--green-500); color: white; }
+    .optimize-btn { background: #9b59b6; color: white; }
+    .assign-btn { background: #3498db; color: white; }
+    .assign-orders-btn { background: #e67e22; color: white; }
+    .edit-btn { background: #95a5a6; color: white; }
+    .dispatch-btn { background: #27ae60; color: white; }
     .optimization-panel { background: white; padding: 24px; border-radius: var(--border-radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 24px; }
     .optimization-options { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin: 24px 0; }
     .option-group h3 { margin-bottom: 16px; }
@@ -265,10 +268,11 @@ export class LogisticsRoutesComponent implements OnInit {
     timeImprovement: 15
   };
 
-  constructor(private deliveryRouteService: DeliveryRouteService, private cdr: ChangeDetectorRef) {}
+  constructor(private deliveryRouteService: DeliveryRouteService, private cdr: ChangeDetectorRef, private http: HttpClient) {}
 
   ngOnInit() {
     this.loadRoutesData();
+    this.loadDriversAndVehicles();
   }
 
   loadRoutesData() {
@@ -299,28 +303,6 @@ export class LogisticsRoutesComponent implements OnInit {
   loadMockData() {
     this.routes = [];
 
-    // Uncomment below for demo data
-    /*
-    this.routes = [
-      {
-        id: 1,
-        routeName: 'Route A - Central',
-        status: 'PLANNED',
-        driverName: undefined,
-        vehicleNumber: undefined,
-        rdcLocation: 'Colombo',
-        scheduledDate: new Date().toISOString(),
-        estimatedTime: '6.5 hours',
-        totalDistance: 85,
-        deliveries: [
-          { address: '123 Main St, Colombo 03' },
-          { address: '456 High St, Colombo 07' },
-          { address: '789 Park Ave, Colombo 05' }
-        ]
-      }
-    ];
-    */
-
     this.availableDrivers = [
       {
         id: 1,
@@ -334,7 +316,7 @@ export class LogisticsRoutesComponent implements OnInit {
         name: 'Sunil Silva',
         licenseType: 'Light Vehicle',
         experience: 5,
-        assignedRoute: 'Route B'
+        assignedRoute: null
       }
     ];
 
@@ -352,7 +334,7 @@ export class LogisticsRoutesComponent implements OnInit {
         number: 'CAB-5678',
         type: 'Van',
         capacity: 800,
-        status: 'MAINTENANCE',
+        status: 'AVAILABLE',
         assignedRoute: null
       }
     ];
@@ -409,19 +391,24 @@ export class LogisticsRoutesComponent implements OnInit {
   }
 
   assignDriver(route: DeliveryRoute) {
-    const availableDrivers = this.availableDrivers.filter(d => !d.assignedRoute);
+    const availableDrivers = this.availableDrivers.filter(d => !d.assignedRoute || d.name === route.driverName);
+    const availableVehicles = this.availableVehicles.filter(v => v.status === 'AVAILABLE' && (!v.assignedRoute || v.number === route.vehicleNumber));
+    
     if (availableDrivers.length === 0) {
       Swal.fire('No Drivers', 'No available drivers to assign.', 'warning');
       return;
     }
 
-    const driverOptions = availableDrivers.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
-    const vehicleOptions = this.availableVehicles
-      .filter(v => v.status === 'AVAILABLE' && !v.assignedRoute)
-      .map(v => `<option value="${v.number}">${v.number} (${v.type})</option>`).join('');
+    const driverOptions = availableDrivers.map(d => 
+      `<option value="${d.name}" ${d.name === route.driverName ? 'selected' : ''}>${d.name}</option>`
+    ).join('');
+    
+    const vehicleOptions = availableVehicles.map(v => 
+      `<option value="${v.number}" ${v.number === route.vehicleNumber ? 'selected' : ''}>${v.number} (${v.type})</option>`
+    ).join('');
 
     Swal.fire({
-      title: 'Assign Driver & Vehicle',
+      title: route.driverName ? 'Update Driver & Vehicle Assignment' : 'Assign Driver & Vehicle',
       html: `
         <select id="driverSelect" class="swal2-select">
           <option value="">Select Driver</option>
@@ -433,7 +420,7 @@ export class LogisticsRoutesComponent implements OnInit {
         </select>
       `,
       showCancelButton: true,
-      confirmButtonText: 'Assign'
+      confirmButtonText: route.driverName ? 'Update Assignment' : 'Assign'
     }).then((result) => {
       if (result.isConfirmed) {
         const driverName = (document.getElementById('driverSelect') as HTMLSelectElement).value;
@@ -447,9 +434,22 @@ export class LogisticsRoutesComponent implements OnInit {
         const request: AssignDriverRequest = { driverName, vehicleNumber };
         
         this.deliveryRouteService.assignDriver(route.id!, request).subscribe({
-          next: () => {
-            Swal.fire('Assigned!', `${driverName} and ${vehicleNumber} assigned to ${route.routeName}.`, 'success');
-            this.loadRoutesData();
+          next: (updatedRoute) => {
+            // Update the route in the local array with the response data
+            const routeIndex = this.routes.findIndex(r => r.id === route.id);
+            if (routeIndex !== -1) {
+              this.routes[routeIndex] = { ...this.routes[routeIndex], driverName, vehicleNumber };
+            }
+            
+            // Update driver and vehicle assignment status
+            const driver = this.availableDrivers.find(d => d.name === driverName);
+            const vehicle = this.availableVehicles.find(v => v.number === vehicleNumber);
+            if (driver) driver.assignedRoute = route.routeName;
+            if (vehicle) vehicle.assignedRoute = route.routeName;
+            
+            this.cdr.detectChanges();
+            const action = route.driverName ? 'Updated' : 'Assigned';
+            Swal.fire(`${action}!`, `${driverName} and ${vehicleNumber} ${action.toLowerCase()} to ${route.routeName}.`, 'success');
           },
           error: () => {
             Swal.fire('Error', 'Failed to assign driver and vehicle', 'error');
@@ -578,6 +578,121 @@ export class LogisticsRoutesComponent implements OnInit {
         // File import functionality would be implemented here
         Swal.fire('Info', 'File import functionality will be implemented.', 'info');
       }
+    });
+  }
+
+  assignOrders(route: DeliveryRoute) {
+    // Load unassigned orders with pick lists + orders currently assigned to this route
+    this.http.get<any[]>(`${environment.apiUrl}/orders/unassigned-with-picklist`).subscribe({
+      next: (unassignedOrders) => {
+        // Also get orders currently assigned to this route
+        this.http.get<any[]>(`${environment.apiUrl}/delivery-routes/${route.id}/orders`).subscribe({
+          next: (routeOrders) => {
+            const allAvailableOrders = [...unassignedOrders, ...routeOrders];
+            
+            if (allAvailableOrders.length === 0) {
+              Swal.fire('No Orders', 'No orders with pick lists available for delivery assignment.', 'warning');
+              return;
+            }
+
+            const orderOptions = allAvailableOrders.map(o => {
+              const isCurrentlyAssigned = routeOrders.some(ro => ro.id === o.id);
+              const checkboxState = isCurrentlyAssigned ? 'checked' : '';
+              return `<label><input type="checkbox" value="${o.id}" ${checkboxState}> ${o.orderCode} - ${o.customerName || 'Unknown'} (Rs. ${o.totalAmount}) ${isCurrentlyAssigned ? '(Currently Assigned)' : '- Available'}</label>`;
+            }).join('<br>');
+
+            Swal.fire({
+              title: `Assign Orders to ${route.routeName}`,
+              html: `<div style="text-align: left; max-height: 300px; overflow-y: auto;">${orderOptions}</div>`,
+              showCancelButton: true,
+              confirmButtonText: 'Update Assignment',
+              preConfirm: () => {
+                const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+                const selectedOrderIds = Array.from(checkboxes).map(cb => parseInt((cb as HTMLInputElement).value));
+                return selectedOrderIds;
+              }
+            }).then((result) => {
+              if (result.isConfirmed) {
+                this.deliveryRouteService.assignOrdersToRoute(route.id!, result.value).subscribe({
+                  next: () => {
+                    Swal.fire('Success', `${result.value.length} orders assigned to ${route.routeName}`, 'success');
+                    this.loadRoutesData();
+                  },
+                  error: () => {
+                    Swal.fire('Error', 'Failed to assign orders to route', 'error');
+                  }
+                });
+              }
+            });
+          },
+          error: () => {
+            // If can't get route orders, just show unassigned ones
+            const orderOptions = unassignedOrders.map(o => 
+              `<label><input type="checkbox" value="${o.id}"> ${o.orderCode} - ${o.customerName || 'Unknown'} (Rs. ${o.totalAmount}) - Available</label>`
+            ).join('<br>');
+
+            Swal.fire({
+              title: `Assign Orders to ${route.routeName}`,
+              html: `<div style="text-align: left; max-height: 300px; overflow-y: auto;">${orderOptions}</div>`,
+              showCancelButton: true,
+              confirmButtonText: 'Assign Selected',
+              preConfirm: () => {
+                const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+                const selectedOrderIds = Array.from(checkboxes).map(cb => parseInt((cb as HTMLInputElement).value));
+                return selectedOrderIds;
+              }
+            }).then((result) => {
+              if (result.isConfirmed) {
+                this.deliveryRouteService.assignOrdersToRoute(route.id!, result.value).subscribe({
+                  next: () => {
+                    Swal.fire('Success', `${result.value.length} orders assigned to ${route.routeName}`, 'success');
+                    this.loadRoutesData();
+                  },
+                  error: () => {
+                    Swal.fire('Error', 'Failed to assign orders to route', 'error');
+                  }
+                });
+              }
+            });
+          }
+        });
+      },
+      error: () => {
+        Swal.fire('Error', 'Failed to load available orders', 'error');
+      }
+    });
+  }
+
+  loadDriversAndVehicles() {
+    // Load drivers from main drivers endpoint
+    this.http.get<any[]>(`${environment.apiUrl}/drivers`).subscribe({
+      next: (drivers) => {
+        this.availableDrivers = drivers.map(d => ({
+          id: d.id,
+          name: d.name,
+          licenseType: 'Heavy Vehicle',
+          experience: 5,
+          assignedRoute: null
+        }));
+        this.cdr.detectChanges();
+      },
+      error: () => this.availableDrivers = []
+    });
+
+    // Load vehicles from main vehicles endpoint
+    this.http.get<any[]>(`${environment.apiUrl}/vehicles`).subscribe({
+      next: (vehicles) => {
+        this.availableVehicles = vehicles.map(v => ({
+          id: v.id,
+          number: v.vehicleNumber,
+          type: v.vehicleType,
+          capacity: v.capacity,
+          status: v.active ? 'AVAILABLE' : 'INACTIVE',
+          assignedRoute: null
+        }));
+        this.cdr.detectChanges();
+      },
+      error: () => this.availableVehicles = []
     });
   }
 }

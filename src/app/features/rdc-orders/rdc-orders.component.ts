@@ -1,6 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import Swal from 'sweetalert2';
@@ -8,213 +7,173 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-rdc-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   template: `
-    <div class="rdc-orders fade-in">
-      <div class="orders-header">
-        <h1>Order Processing</h1>
+    <div class="rdc-orders">
+      <div class="header">
+        <h1>📦 RDC Orders</h1>
         <div class="filters">
-          <select [(ngModel)]="statusFilter" (change)="filterOrders()">
-            <option value="">All Orders</option>
-            <option value="NEW">New Orders</option>
-            <option value="ACCEPTED">Accepted</option>
-            <option value="PACKED">Packed</option>
-            <option value="READY">Ready for Dispatch</option>
-          </select>
+          <button *ngFor="let status of statuses" 
+                  (click)="filterByStatus(status)"
+                  [class.active]="selectedStatus === status"
+                  class="filter-btn">
+            {{status}}
+          </button>
         </div>
       </div>
 
-      <div class="orders-grid">
-        <div class="order-card" *ngFor="let order of filteredOrders" [class]="'status-' + order.status.toLowerCase()">
+      <!-- Route Pick Lists Section -->
+      <div class="routes-section" *ngIf="routes.length > 0">
+        <h2>📋 Route Pick Lists (Legacy - Use Individual Orders Instead)</h2>
+        <p class="info-message">⚠️ Route pick lists are deprecated. Create pick lists for individual orders first, then assign them to routes in Logistics.</p>
+      </div>
+
+      <!-- Individual Orders Section -->
+      <div class="orders-list">
+        <h2>Individual Orders</h2>
+        <div *ngFor="let order of filteredOrders" class="order-item">
           <div class="order-header">
-            <div class="order-id">
-              <h3>Order #{{order.id}}</h3>
-              <span class="order-date">{{formatDate(order.orderDate)}}</span>
-            </div>
-            <span class="status-badge" [class]="order.status.toLowerCase()">{{order.status}}</span>
+            <span class="order-number">{{order.orderCode}}</span>
+            <span class="status-badge" [class]="'status-' + order.status.toLowerCase()">
+              {{order.status}}
+            </span>
           </div>
-
-          <div class="customer-info">
-            <h4>{{order.customerName}}</h4>
-            <p>{{order.deliveryAddress}}</p>
-            <p>Phone: {{order.customerPhone}}</p>
+          <div class="order-details">
+            <p><strong>Customer:</strong> {{order.customerName || 'Unknown Customer'}}</p>
+            <p><strong>Total:</strong> LKR {{order.totalAmount | number:'1.2-2'}}</p>
+            <p><strong>Date:</strong> {{order.orderDate | date:'short'}}</p>
+            <p *ngIf="order.rejectionReason"><strong>Rejection Reason:</strong> {{order.rejectionReason}}</p>
           </div>
-
-          <div class="order-items">
-            <h4>Items ({{order.items.length}})</h4>
-            <div class="items-list">
-              <div class="item" *ngFor="let item of order.items">
-                <span>{{item.productName}} x {{item.quantity}}</span>
-                <span>Rs. {{item.totalPrice}}</span>
-              </div>
-            </div>
-            <div class="order-total">
-              <strong>Total: Rs. {{order.totalAmount}}</strong>
-            </div>
-          </div>
-
-          <div class="order-actions">
-            <button class="accept-btn" *ngIf="order.status === 'NEW'" (click)="acceptOrder(order)">Accept</button>
-            <button class="reject-btn" *ngIf="order.status === 'NEW'" (click)="rejectOrder(order)">Reject</button>
-            <button class="pack-btn" *ngIf="order.status === 'ACCEPTED'" (click)="markAsPacked(order)">Mark as Packed</button>
-            <button class="ready-btn" *ngIf="order.status === 'PACKED'" (click)="markAsReady(order)">Ready for Dispatch</button>
-            <button class="view-btn" (click)="viewOrderDetails(order)">View Details</button>
+          
+          <div class="order-actions" *ngIf="order.status === 'CONFIRMED'">
+            <button (click)="generatePickList(order.id)" class="btn-picklist">
+              📋 Generate Pick List
+            </button>
           </div>
         </div>
-      </div>
-
-      <div class="empty-state" *ngIf="filteredOrders.length === 0">
-        <h3>No orders found</h3>
-        <p>No orders match the current filter criteria.</p>
       </div>
     </div>
   `,
   styles: [`
-    .rdc-orders { padding: 40px; max-width: 1400px; margin: 0 auto; }
-    .orders-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-    .filters select { padding: 12px; border: 1px solid var(--gray-300); border-radius: var(--border-radius-md); }
-    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 24px; }
-    .order-card { background: white; border-radius: var(--border-radius-lg); box-shadow: var(--shadow-sm); padding: 24px; border-left: 4px solid; }
-    .order-card.status-new { border-color: var(--blue-500); }
-    .order-card.status-accepted { border-color: var(--green-500); }
-    .order-card.status-packed { border-color: var(--purple-500); }
-    .order-card.status-ready { border-color: var(--orange-500); }
-    .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-    .order-id h3 { margin: 0 0 4px 0; }
-    .order-date { font-size: 12px; color: var(--gray-500); }
-    .status-badge { padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
-    .status-badge.new { background: var(--blue-100); color: var(--blue-600); }
-    .status-badge.accepted { background: var(--green-100); color: var(--green-600); }
-    .status-badge.packed { background: var(--purple-100); color: var(--purple-600); }
-    .status-badge.ready { background: var(--orange-100); color: var(--orange-600); }
-    .customer-info { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--gray-200); }
-    .customer-info h4 { margin: 0 0 8px 0; }
-    .customer-info p { margin: 4px 0; color: var(--gray-600); font-size: 14px; }
-    .order-items h4 { margin: 0 0 12px 0; }
-    .items-list { margin-bottom: 12px; }
-    .item { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
-    .order-total { padding-top: 8px; border-top: 1px solid var(--gray-200); }
-    .order-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-    .order-actions button { padding: 8px 16px; border: none; border-radius: var(--border-radius-md); cursor: pointer; font-size: 12px; font-weight: 600; }
-    .accept-btn { background: var(--green-500); color: white; }
-    .reject-btn { background: var(--red-500); color: white; }
-    .pack-btn { background: var(--purple-500); color: white; }
-    .ready-btn { background: var(--orange-500); color: white; }
-    .view-btn { background: var(--gray-100); color: var(--gray-700); }
-    .empty-state { text-align: center; padding: 80px 40px; }
+    .rdc-orders { padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .filters { display: flex; gap: 10px; }
+    .filter-btn { padding: 8px 16px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; }
+    .filter-btn.active { background: #007bff; color: white; }
+    .orders-list { display: grid; gap: 15px; }
+    .order-item { border: 1px solid #ddd; border-radius: 8px; padding: 16px; background: white; }
+    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .order-number { font-weight: bold; font-size: 16px; }
+    .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-confirmed { background: #d4edda; color: #155724; }
+    .status-pick_list_created { background: #cce5ff; color: #004085; }
+    .status-rejected { background: #f8d7da; color: #721c24; }
+    .info-message { background: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; margin-bottom: 20px; }
+    .order-details p { margin: 4px 0; }
+    .order-actions { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+    .btn-picklist { padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
   `]
 })
 export class RdcOrdersComponent implements OnInit {
   orders: any[] = [];
   filteredOrders: any[] = [];
-  statusFilter = '';
+  routes: any[] = [];
+  statuses = ['ALL', 'PENDING', 'CONFIRMED', 'PICK_LIST_CREATED', 'REJECTED'];
+  selectedStatus = 'ALL';
+  rdcId = 1;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.loadOrders();
+    this.loadRoutes();
   }
 
   loadOrders() {
-    // Mock data - replace with actual API call
-    this.orders = [
-      {
-        id: 1001,
-        customerName: 'ABC Store',
-        customerPhone: '+94 77 123 4567',
-        deliveryAddress: '123 Main St, Colombo 03',
-        orderDate: new Date('2024-01-20'),
-        status: 'NEW',
-        totalAmount: 2500,
-        items: [
-          { productName: 'Product A', quantity: 2, totalPrice: 1000 },
-          { productName: 'Product B', quantity: 3, totalPrice: 1500 }
-        ]
-      },
-      {
-        id: 1002,
-        customerName: 'XYZ Mart',
-        customerPhone: '+94 77 987 6543',
-        deliveryAddress: '456 High St, Colombo 07',
-        orderDate: new Date('2024-01-21'),
-        status: 'ACCEPTED',
-        totalAmount: 1800,
-        items: [
-          { productName: 'Product C', quantity: 1, totalPrice: 800 },
-          { productName: 'Product D', quantity: 2, totalPrice: 1000 }
-        ]
-      }
-    ];
-    this.filteredOrders = [...this.orders];
+    console.log('Loading orders for RDC ID:', this.rdcId);
+    this.http.get<any[]>(`${environment.apiUrl}/orders/rdc-id/${this.rdcId}`)
+      .subscribe({
+        next: (orders) => {
+          console.log('Orders received:', orders);
+          setTimeout(() => {
+            this.orders = orders || [];
+            this.filterByStatus(this.selectedStatus);
+            console.log('Filtered orders:', this.filteredOrders);
+            this.cdr.detectChanges();
+          }, 0);
+        },
+        error: (error) => {
+          console.error('Error loading orders:', error);
+          this.orders = [];
+          this.filteredOrders = [];
+        }
+      });
   }
 
-  filterOrders() {
-    if (this.statusFilter) {
-      this.filteredOrders = this.orders.filter(order => order.status === this.statusFilter);
+  filterByStatus(status: string) {
+    this.selectedStatus = status;
+    if (status === 'ALL') {
+      this.filteredOrders = this.orders;
     } else {
-      this.filteredOrders = [...this.orders];
+      this.filteredOrders = this.orders.filter(order => order.status === status);
     }
   }
 
-  acceptOrder(order: any) {
-    Swal.fire({
-      title: 'Accept Order?',
-      text: `Accept order #${order.id} from ${order.customerName}?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Accept'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        order.status = 'ACCEPTED';
-        Swal.fire('Accepted!', 'Order has been accepted.', 'success');
-      }
-    });
+  generatePickList(orderId: number) {
+    this.http.post(`${environment.apiUrl}/picklist/order/${orderId}`, {})
+      .subscribe({
+        next: (pickList) => {
+          console.log('Pick list generated:', pickList);
+          Swal.fire('Success!', 'Pick list generated! Order is now ready for route assignment.', 'success');
+          this.loadOrders();
+        },
+        error: (error) => {
+          console.error('Error generating pick list:', error);
+          Swal.fire('Error!', error.error?.message || 'Failed to generate pick list', 'error');
+        }
+      });
   }
 
-  rejectOrder(order: any) {
-    Swal.fire({
-      title: 'Reject Order?',
-      input: 'textarea',
-      inputLabel: 'Reason for rejection',
-      inputPlaceholder: 'Enter reason...',
-      showCancelButton: true,
-      confirmButtonText: 'Reject'
-    }).then((result) => {
-      if (result.isConfirmed && result.value) {
-        order.status = 'REJECTED';
-        order.rejectionReason = result.value;
-        Swal.fire('Rejected!', 'Order has been rejected.', 'success');
-      }
-    });
+  loadRoutes() {
+    this.http.get<any[]>(`${environment.apiUrl}/delivery-routes`)
+      .subscribe({
+        next: (routes) => {
+          this.routes = routes.map(route => ({
+            ...route,
+            orderCount: 0 // Will be updated when we get route orders
+          }));
+          // Load order count for each route
+          this.routes.forEach(route => {
+            this.http.get<any[]>(`${environment.apiUrl}/delivery-routes/${route.id}/orders`)
+              .subscribe({
+                next: (orders) => {
+                  route.orderCount = orders.filter(o => o.status === 'CONFIRMED').length;
+                },
+                error: () => route.orderCount = 0
+              });
+          });
+        },
+        error: (error) => {
+          console.error('Error loading routes:', error);
+          this.routes = [];
+        }
+      });
   }
 
-  markAsPacked(order: any) {
-    order.status = 'PACKED';
-    Swal.fire('Updated!', 'Order marked as packed.', 'success');
-  }
-
-  markAsReady(order: any) {
-    order.status = 'READY';
-    Swal.fire('Updated!', 'Order is ready for dispatch.', 'success');
-  }
-
-  viewOrderDetails(order: any) {
-    Swal.fire({
-      title: `Order #${order.id} Details`,
-      html: `
-        <div style="text-align: left;">
-          <p><strong>Customer:</strong> ${order.customerName}</p>
-          <p><strong>Phone:</strong> ${order.customerPhone}</p>
-          <p><strong>Address:</strong> ${order.deliveryAddress}</p>
-          <p><strong>Status:</strong> ${order.status}</p>
-          <p><strong>Total:</strong> Rs. ${order.totalAmount}</p>
-        </div>
-      `,
-      width: 600
-    });
-  }
-
-  formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString();
+  generateRoutePickList(routeId: number) {
+    this.http.get(`${environment.apiUrl}/delivery/picklist/route/${routeId}`)
+      .subscribe({
+        next: (pickList) => {
+          console.log('Route pick list generated:', pickList);
+          alert('Route pick list generated! All orders in this route are now being processed.');
+          this.loadOrders();
+          this.loadRoutes();
+        },
+        error: (error) => {
+          console.error('Error generating route pick list:', error);
+          alert('Error: ' + (error.error?.message || 'Failed to generate route pick list'));
+        }
+      });
   }
 }

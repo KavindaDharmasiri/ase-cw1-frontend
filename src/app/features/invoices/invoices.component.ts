@@ -1,154 +1,145 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
-import { PaymentService } from '../../core/services/payment.service';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-invoices',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  providers: [],
   template: `
-    <div class="invoices-container fade-in">
-      <h1>My Invoices</h1>
+    <div class="container mt-4">
+      <h2>Invoices</h2>
       
-      <div class="invoices-list" *ngIf="invoices.length > 0">
-        <div class="invoice-card" *ngFor="let invoice of invoices">
-          <div class="invoice-header">
-            <h3>Invoice #{{invoice.id}}</h3>
-            <span class="invoice-date">{{formatDate(invoice.paymentDate)}}</span>
-          </div>
-          <div class="invoice-details">
-            <p><strong>Order ID:</strong> {{invoice.orderId}}</p>
-            <p><strong>Amount:</strong> Rs. {{invoice.amount | number:'1.2-2'}}</p>
-            <p><strong>Payment Method:</strong> {{invoice.method}}</p>
-            <p><strong>Status:</strong> 
-              <span class="status" [class]="invoice.status?.toLowerCase()">{{invoice.status}}</span>
-            </p>
-            <p *ngIf="invoice.transactionId"><strong>Transaction ID:</strong> {{invoice.transactionId}}</p>
-          </div>
-          <div class="invoice-actions">
-            <button class="btn-download" (click)="downloadInvoice(invoice.id)">Download PDF</button>
-            <button class="btn-view" (click)="viewInvoice(invoice)">View Details</button>
-          </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <input type="text" class="form-control" placeholder="Search by Order ID" 
+                 [(ngModel)]="searchOrderId" (keyup.enter)="searchByOrderId()">
+        </div>
+        <div class="col-md-6">
+          <button class="btn btn-primary" (click)="searchByOrderId()">Search</button>
+          <button class="btn btn-secondary ms-2" (click)="loadAllInvoices()">Show All</button>
         </div>
       </div>
 
-      <div class="empty-invoices" *ngIf="invoices.length === 0">
-        <h2>No invoices found</h2>
-        <p>Your invoices will appear here after placing orders.</p>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Order ID</th>
+              <th>Date</th>
+              <th>Subtotal</th>
+              <th>Tax (10%)</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let invoice of invoices">
+              <td>{{invoice.invoiceNumber}}</td>
+              <td>{{invoice.order?.id}}</td>
+              <td>{{invoice.invoiceDate | date:'short'}}</td>
+              <td>LKR {{invoice.subtotal}}</td>
+              <td>LKR {{invoice.taxAmount}}</td>
+              <td><strong>LKR {{invoice.totalAmount}}</strong></td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'bg-success': invoice.paymentStatus === 'PAID',
+                  'bg-warning': invoice.paymentStatus === 'PENDING',
+                  'bg-danger': invoice.paymentStatus === 'OVERDUE'
+                }">
+                  {{invoice.paymentStatus}}
+                </span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-info" (click)="viewInvoice(invoice)">View</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Invoice Detail Modal -->
+      <div class="modal fade" id="invoiceModal" tabindex="-1" *ngIf="selectedInvoice">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Invoice Details</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <h6>Invoice Information</h6>
+                  <p><strong>Invoice #:</strong> {{selectedInvoice.invoiceNumber}}</p>
+                  <p><strong>Date:</strong> {{selectedInvoice.invoiceDate | date:'medium'}}</p>
+                  <p><strong>Order ID:</strong> {{selectedInvoice.order?.id}}</p>
+                </div>
+                <div class="col-md-6">
+                  <h6>Payment Summary</h6>
+                  <p>Subtotal: <strong>LKR {{selectedInvoice.subtotal}}</strong></p>
+                  <p>Tax (10%): <strong>LKR {{selectedInvoice.taxAmount}}</strong></p>
+                  <p>Total: <strong>LKR {{selectedInvoice.totalAmount}}</strong></p>
+                  <p>Status: 
+                    <span class="badge" [ngClass]="{
+                      'bg-success': selectedInvoice.paymentStatus === 'PAID',
+                      'bg-warning': selectedInvoice.paymentStatus === 'PENDING'
+                    }">
+                      {{selectedInvoice.paymentStatus}}
+                    </span>
+                  </p>
+                  <p *ngIf="selectedInvoice.paymentMethod">
+                    Method: <strong>{{selectedInvoice.paymentMethod}}</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  `,
-  styles: [`
-    .invoices-container { padding: 40px; max-width: 1000px; margin: 0 auto; }
-    .invoices-list { display: grid; gap: 20px; }
-    .invoice-card { background: white; padding: 24px; border-radius: var(--border-radius-lg); box-shadow: var(--shadow-sm); }
-    .invoice-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .invoice-header h3 { margin: 0; color: var(--gray-800); }
-    .invoice-date { color: var(--gray-600); font-size: 14px; }
-    .invoice-details p { margin: 8px 0; }
-    .status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
-    .status.completed { background: var(--green-100); color: var(--secondary-green); }
-    .status.pending { background: var(--yellow-100); color: var(--yellow-600); }
-    .status.failed { background: var(--red-100); color: var(--red-600); }
-    .invoice-actions { display: flex; gap: 12px; margin-top: 16px; }
-    .btn-download, .btn-view { padding: 8px 16px; border: none; border-radius: var(--border-radius-md); cursor: pointer; }
-    .btn-download { background: var(--primary-blue); color: white; }
-    .btn-view { background: var(--gray-100); color: var(--gray-700); }
-    .empty-invoices { text-align: center; padding: 80px 40px; }
-  `]
+  `
 })
 export class InvoicesComponent implements OnInit {
   invoices: any[] = [];
+  selectedInvoice: any = null;
+  searchOrderId: string = '';
 
   constructor(
-    private authService: AuthService,
-    private paymentService: PaymentService
+    private http: HttpClient,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
-    this.loadInvoices();
+    this.loadAllInvoices();
   }
 
-  loadInvoices() {
-    this.paymentService.getPaymentHistory().subscribe({
-      next: (payments) => {
-        this.invoices = payments;
-      },
-      error: () => {
-        // Mock data for demo
-        this.invoices = [
-          {
-            id: 1,
-            orderId: 1001,
-            amount: 2500.00,
-            method: 'ONLINE',
-            status: 'COMPLETED',
-            transactionId: 'TXN_12345678',
-            paymentDate: new Date('2024-01-15')
-          },
-          {
-            id: 2,
-            orderId: 1002,
-            amount: 1800.00,
-            method: 'CASH_ON_DELIVERY',
-            status: 'PENDING',
-            paymentDate: new Date('2024-01-20')
-          }
-        ];
-      }
+  loadAllInvoices() {
+    this.http.get<any[]>('/api/invoices').subscribe({
+      next: (data) => this.invoices = data,
+      error: (error) => console.error('Error loading invoices:', error)
     });
   }
 
-  formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString();
-  }
-
-  downloadInvoice(invoiceId: number) {
-    // Generate PDF content
-    const pdfContent = `
-      INVOICE #${invoiceId}
-      ==================
-      
-      Date: ${new Date().toLocaleDateString()}
-      Customer: ${this.authService.getUsername()}
-      
-      Order Details:
-      - Order ID: ${invoiceId}
-      - Amount: Rs. ${this.invoices.find(i => i.id === invoiceId)?.amount || 0}
-      
-      Thank you for your business!
-    `;
-    
-    // Create and download file
-    const blob = new Blob([pdfContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `invoice-${invoiceId}.txt`;
-    link.click();
-    window.URL.revokeObjectURL(url);
-    
-    Swal.fire('Downloaded', `Invoice #${invoiceId} has been downloaded.`, 'success');
+  searchByOrderId() {
+    if (this.searchOrderId) {
+      this.http.get<any>(`/api/invoices/order/${this.searchOrderId}`).subscribe({
+        next: (data) => this.invoices = [data],
+        error: (error) => {
+          console.error('Invoice not found:', error);
+          this.invoices = [];
+        }
+      });
+    }
   }
 
   viewInvoice(invoice: any) {
-    Swal.fire({
-      title: `Invoice #${invoice.id}`,
-      html: `
-        <div style="text-align: left;">
-          <p><strong>Order ID:</strong> ${invoice.orderId}</p>
-          <p><strong>Amount:</strong> Rs. ${invoice.amount}</p>
-          <p><strong>Payment Method:</strong> ${invoice.method}</p>
-          <p><strong>Status:</strong> ${invoice.status}</p>
-          <p><strong>Date:</strong> ${this.formatDate(invoice.paymentDate)}</p>
-          ${invoice.transactionId ? `<p><strong>Transaction ID:</strong> ${invoice.transactionId}</p>` : ''}
-        </div>
-      `,
-      confirmButtonText: 'Close'
-    });
+    this.selectedInvoice = invoice;
+    const modal = new (window as any).bootstrap.Modal(document.getElementById('invoiceModal'));
+    modal.show();
   }
 }

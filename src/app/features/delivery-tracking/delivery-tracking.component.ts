@@ -1,168 +1,119 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { DeliveryService } from '../../core/services/delivery.service';
-import { AuthService } from '../../core/services/auth.service';
-import Swal from 'sweetalert2';
+import { ActivatedRoute } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-delivery-tracking',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  providers: [DeliveryService],
+  imports: [CommonModule],
   template: `
-    <div class="delivery-container">
+    <div class="tracking-container">
       <h1>🚚 Delivery Tracking</h1>
       
-      <div class="filters">
-        <select [(ngModel)]="statusFilter" (change)="filterDeliveries()">
-          <option value="">All Status</option>
-          <option value="SCHEDULED">Scheduled</option>
-          <option value="IN_TRANSIT">In Transit</option>
-          <option value="DELIVERED">Delivered</option>
-          <option value="FAILED">Failed</option>
-        </select>
-        
-        <div class="stats">
-          <span class="stat">Total: {{deliveries.length}}</span>
-          <span class="stat">In Transit: {{getInTransitCount()}}</span>
-          <span class="stat">Delivered Today: {{getDeliveredTodayCount()}}</span>
+      <div *ngIf="trackingInfo" class="tracking-card">
+        <div class="order-info">
+          <h3>Order #{{trackingInfo.orderId}}</h3>
+          <p><strong>Status:</strong> <span class="status-badge" [class]="'status-' + trackingInfo.status.toLowerCase()">{{trackingInfo.status}}</span></p>
+          <p><strong>Driver:</strong> {{trackingInfo.driverName}}</p>
+          <p><strong>Vehicle:</strong> {{trackingInfo.vehicleNumber}}</p>
+          <p><strong>Scheduled:</strong> {{trackingInfo.scheduledDate | date:'short'}}</p>
+          <p *ngIf="trackingInfo.actualDeliveryDate"><strong>Delivered:</strong> {{trackingInfo.actualDeliveryDate | date:'short'}}</p>
         </div>
-      </div>
 
-      <div class="deliveries-grid">
-        <div *ngFor="let delivery of filteredDeliveries" class="delivery-card" 
-             [ngClass]="'status-' + delivery.status.toLowerCase()">
-          <div class="delivery-header">
-            <h3>Delivery #{{delivery.id}}</h3>
-            <span class="status-badge">{{delivery.status}}</span>
+        <div *ngIf="trackingInfo.currentLocation" class="location-info">
+          <h4>📍 Current Location</h4>
+          <p>{{trackingInfo.currentLocation}}</p>
+          <div class="map-placeholder">
+            <p>🗺️ Map View (GPS: {{trackingInfo.currentLocation}})</p>
           </div>
-          
-          <div class="delivery-details">
-            <p><strong>Order:</strong> #{{delivery.order.id}}</p>
-            <p><strong>Customer:</strong> {{delivery.order.customer.fullName}}</p>
-            <p><strong>Driver:</strong> {{delivery.driverName}}</p>
-            <p><strong>Vehicle:</strong> {{delivery.vehicleNumber}}</p>
-            <p><strong>Scheduled:</strong> {{formatDate(delivery.scheduledDate)}}</p>
-            <p><strong>Address:</strong> {{delivery.order.deliveryAddress}}</p>
-            <p *ngIf="delivery.currentLocation"><strong>Location:</strong> {{delivery.currentLocation}}</p>
-          </div>
+        </div>
 
-          <div class="delivery-actions" *ngIf="userRole === 'LOGISTICS'">
-            <select [(ngModel)]="delivery.newStatus" class="status-select">
-              <option value="SCHEDULED">Scheduled</option>
-              <option value="IN_TRANSIT">In Transit</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="FAILED">Failed</option>
-            </select>
-            <input type="text" [(ngModel)]="delivery.newLocation" placeholder="Current Location" class="location-input">
-            <button (click)="updateDeliveryStatus(delivery)" 
-                    [disabled]="delivery.newStatus === delivery.status">
-              Update
-            </button>
+        <div class="delivery-progress">
+          <h4>Delivery Progress</h4>
+          <div class="progress-steps">
+            <div class="step" [class.active]="isStepActive('SCHEDULED')">
+              <span class="step-icon">📋</span>
+              <span>Scheduled</span>
+            </div>
+            <div class="step" [class.active]="isStepActive('IN_TRANSIT')">
+              <span class="step-icon">🚚</span>
+              <span>In Transit</span>
+            </div>
+            <div class="step" [class.active]="isStepActive('DELIVERED')">
+              <span class="step-icon">✅</span>
+              <span>Delivered</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div *ngIf="filteredDeliveries.length === 0" class="no-deliveries">
-        <p>No deliveries found.</p>
+      <div *ngIf="!trackingInfo && !loading" class="no-tracking">
+        <p>No tracking information available for this order.</p>
+      </div>
+
+      <div *ngIf="loading" class="loading">
+        <p>Loading tracking information...</p>
       </div>
     </div>
   `,
   styles: [`
-    .delivery-container { padding: 20px; }
-    .filters { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
-    .filters select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-    .stats { display: flex; gap: 20px; }
-    .stat { padding: 8px 12px; background: white; border-radius: 4px; font-weight: bold; }
-    .deliveries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; }
-    .delivery-card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; background: white; }
-    .delivery-card.status-scheduled { border-left: 4px solid #f39c12; }
-    .delivery-card.status-in_transit { border-left: 4px solid #3498db; }
-    .delivery-card.status-delivered { border-left: 4px solid #27ae60; }
-    .delivery-card.status-failed { border-left: 4px solid #e74c3c; }
-    .delivery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .delivery-header h3 { margin: 0; }
-    .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; background: #ecf0f1; color: #2c3e50; }
-    .delivery-details p { margin: 5px 0; }
-    .delivery-actions { display: flex; gap: 10px; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
-    .status-select, .location-input { padding: 6px; border: 1px solid #ddd; border-radius: 4px; }
-    .location-input { flex: 1; }
-    .delivery-actions button { padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    .delivery-actions button:disabled { background: #bdc3c7; cursor: not-allowed; }
-    .no-deliveries { text-align: center; padding: 40px; color: #666; }
+    .tracking-container { padding: 20px; max-width: 800px; margin: 0 auto; }
+    .tracking-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .order-info { margin-bottom: 20px; }
+    .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+    .status-scheduled { background: #fff3cd; color: #856404; }
+    .status-in_transit { background: #cce5ff; color: #004085; }
+    .status-delivered { background: #d4edda; color: #155724; }
+    .location-info { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 4px; }
+    .map-placeholder { background: #e9ecef; padding: 40px; text-align: center; border-radius: 4px; margin-top: 10px; }
+    .progress-steps { display: flex; justify-content: space-between; margin-top: 15px; }
+    .step { display: flex; flex-direction: column; align-items: center; opacity: 0.5; }
+    .step.active { opacity: 1; color: #28a745; }
+    .step-icon { font-size: 24px; margin-bottom: 5px; }
+    .no-tracking, .loading { text-align: center; padding: 40px; color: #666; }
   `]
 })
 export class DeliveryTrackingComponent implements OnInit {
-  deliveries: any[] = [];
-  filteredDeliveries: any[] = [];
-  statusFilter = '';
-  userRole = '';
+  trackingInfo: any = null;
+  loading = true;
+  orderId: number = 0;
 
   constructor(
-    private deliveryService: DeliveryService,
-    private authService: AuthService
+    private route: ActivatedRoute,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
-    this.userRole = this.authService.getUserRole() || '';
-    this.loadDeliveries();
-  }
-
-  loadDeliveries() {
-    this.deliveryService.getAllDeliveries().subscribe({
-      next: (deliveries) => {
-        this.deliveries = deliveries.map(delivery => ({
-          ...delivery, 
-          newStatus: delivery.status,
-          newLocation: delivery.currentLocation || ''
-        }));
-        this.filteredDeliveries = [...this.deliveries];
-      },
-      error: (error) => console.error('Error loading deliveries:', error)
+    this.route.params.subscribe(params => {
+      this.orderId = +params['orderId'];
+      this.loadTrackingInfo();
     });
   }
 
-  filterDeliveries() {
-    if (this.statusFilter) {
-      this.filteredDeliveries = this.deliveries.filter(delivery => 
-        delivery.status === this.statusFilter);
-    } else {
-      this.filteredDeliveries = [...this.deliveries];
-    }
+  loadTrackingInfo() {
+    this.loading = true;
+    this.http.get(`${environment.apiUrl}/delivery/track/${this.orderId}`)
+      .subscribe({
+        next: (data) => {
+          this.trackingInfo = data;
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error loading tracking info:', error);
+          this.loading = false;
+        }
+      });
   }
 
-  updateDeliveryStatus(delivery: any) {
-    this.deliveryService.updateDeliveryStatus(delivery.id, {
-      status: delivery.newStatus,
-      currentLocation: delivery.newLocation,
-      notes: ''
-    }).subscribe({
-      next: (updatedDelivery) => {
-        delivery.status = delivery.newStatus;
-        delivery.currentLocation = delivery.newLocation;
-        Swal.fire('Success', 'Delivery status updated successfully', 'success');
-      },
-      error: (error) => {
-        Swal.fire('Error', 'Failed to update delivery status', 'error');
-        console.error('Error updating delivery status:', error);
-      }
-    });
-  }
-
-  getInTransitCount(): number {
-    return this.deliveries.filter(d => d.status === 'IN_TRANSIT').length;
-  }
-
-  getDeliveredTodayCount(): number {
-    const today = new Date().toDateString();
-    return this.deliveries.filter(d => 
-      d.status === 'DELIVERED' && 
-      new Date(d.actualDeliveryDate).toDateString() === today
-    ).length;
-  }
-
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString();
+  isStepActive(step: string): boolean {
+    if (!this.trackingInfo) return false;
+    
+    const steps = ['SCHEDULED', 'IN_TRANSIT', 'DELIVERED'];
+    const stepIndex = steps.indexOf(step);
+    const currentIndex = steps.indexOf(this.trackingInfo.status);
+    
+    return stepIndex <= currentIndex;
   }
 }

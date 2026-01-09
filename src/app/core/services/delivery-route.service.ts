@@ -89,4 +89,24 @@ export class DeliveryRouteService {
   countRoutesByStatus(status: string): Observable<number> {
     return this.http.get<number>(`${this.apiUrl}/stats/count/${status}`);
   }
+
+  getConfirmedOrders(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/orders?status=CONFIRMED`);
+  }
+
+  assignOrdersToRoute(routeId: number, orderIds: number[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${routeId}/assign-orders`, { orderIds });
+  }
+
+  getRouteOrders(routeId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${routeId}/orders`);
+  }
+
+  getAvailableDrivers(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/drivers/available`);
+  }
+
+  getAvailableVehicles(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/vehicles/available`);
+  }
 }

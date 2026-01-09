@@ -1,10 +1,10 @@
 import { Product } from './product.model';
-import { User } from './user.model';
 
 export interface Order {
   id: number;
   orderCode: string;
-  customer: User;
+  customerId: number;
+  customerName: string;
   rdcLocation: string;
   status: OrderStatus;
   totalAmount: number;
@@ -15,15 +15,22 @@ export interface Order {
   customerPhone?: string;
   storeName?: string;
   orderItems?: OrderItem[];
+  rejectionReason?: string;
   newStatus?: OrderStatus; // For UI state management
 }
 
 export interface OrderItem {
   id: number;
-  product: Product;
+  product: ProductInfo;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+}
+
+export interface ProductInfo {
+  id: number;
+  name: string;
+  imageUrl?: string;
 }
 
 export type OrderStatus = 

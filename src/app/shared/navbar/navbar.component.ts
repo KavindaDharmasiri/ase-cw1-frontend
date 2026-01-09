@@ -68,6 +68,18 @@ import { filter } from 'rxjs/operators';
           </svg>
           Browse Products
         </a>
+        <a *ngIf="userRole === 'RETAILER'" routerLink="/orders" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 12l-4-4 1.41-1.41L11 12.17l6.59-6.59L19 7l-8 8z"/>
+          </svg>
+          My Orders
+        </a>
+        <a *ngIf="userRole === 'RETAILER' || userRole === 'HEAD_OFFICE_MANAGER'" routerLink="/invoices" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+          </svg>
+          Invoices
+        </a>
         <a *ngIf="userRole === 'RDC_STAFF' || userRole === 'HEAD_OFFICE_MANAGER'"
            routerLink="/products" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">
           <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
@@ -106,6 +118,18 @@ import { filter } from 'rxjs/operators';
           </svg>
           Route Management
         </a>
+        <a *ngIf="userRole === 'LOGISTICS'" routerLink="/driver-management" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+          Driver Management
+        </a>
+        <a *ngIf="userRole === 'LOGISTICS'" routerLink="/delivery-confirmation" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+          </svg>
+          Delivery Confirmation
+        </a>
         <a *ngIf="userRole === 'HEAD_OFFICE_MANAGER'" routerLink="/delivery-zones" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">
           <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
@@ -135,6 +159,18 @@ import { filter } from 'rxjs/operators';
             <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 12l-4-4 1.41-1.41L11 12.17l6.59-6.59L19 7l-8 8z"/>
           </svg>
           Goods Receipt
+        </a>
+        <a *ngIf="userRole === 'RDC_STAFF'" routerLink="/rdc/orders" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 12l-4-4 1.41-1.41L11 12.17l6.59-6.59L19 7l-8 8z"/>
+          </svg>
+          All Orders
+        </a>
+        <a *ngIf="userRole === 'RDC_STAFF'" routerLink="/order-verification" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+          </svg>
+          Order Verification
         </a>
         <a *ngIf="userRole === 'RDC_STAFF'" routerLink="/warehouse" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">
           <svg class="icon" viewBox="0 0 24 24" fill="currentColor">

@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-ho-reports',
@@ -321,26 +324,29 @@ export class HoReportsComponent implements OnInit {
   activeCategory = 'sales';
   selectedPeriod = 'monthly';
   selectedRdc = '';
+  reportData: any = {};
+
+  constructor(private http: HttpClient) {}
 
   salesReports = [
-    { id: 1, title: 'Sales Performance by RDC', description: 'Compare sales performance across all RDCs' },
-    { id: 2, title: 'Product Sales Analysis', description: 'Top performing products and categories' },
-    { id: 3, title: 'Customer Sales Trends', description: 'Customer purchasing patterns and trends' },
-    { id: 4, title: 'Revenue Growth Analysis', description: 'Month-over-month revenue growth metrics' }
+    { id: 1, title: 'Sales Performance by RDC', description: 'Compare sales performance across all RDCs', endpoint: '/api/reports/sales' },
+    { id: 2, title: 'Dashboard Summary', description: 'Overall business metrics and KPIs', endpoint: '/api/reports/dashboard' },
+    { id: 3, title: 'Financial Report', description: 'Revenue and financial ledger summary', endpoint: '/api/reports/financial' },
+    { id: 4, title: 'Export Sales Data', description: 'Download sales data as CSV', endpoint: '/api/reports/sales/export' }
   ];
 
   inventoryReports = [
-    { id: 5, title: 'Inventory Turnover Report', description: 'Stock turnover rates by product and RDC' },
-    { id: 6, title: 'Stock Level Analysis', description: 'Current stock levels and reorder recommendations' },
-    { id: 7, title: 'Damaged/Expired Stock', description: 'Report on damaged and expired inventory' },
-    { id: 8, title: 'Inter-RDC Transfer Summary', description: 'Stock transfer activities between RDCs' }
+    { id: 5, title: 'Inventory Summary', description: 'Current inventory levels and status', endpoint: '/api/reports/inventory' },
+    { id: 6, title: 'Low Stock Alert', description: 'Items requiring immediate restocking', endpoint: '/api/reports/inventory' },
+    { id: 7, title: 'Export Inventory Data', description: 'Download inventory report as CSV', endpoint: '/api/reports/inventory/export' },
+    { id: 8, title: 'Stock Movement Report', description: 'Track inventory movements and transfers', endpoint: '/api/reports/inventory' }
   ];
 
   deliveryReports = [
-    { id: 9, title: 'Delivery Performance Metrics', description: 'On-time delivery rates and performance KPIs' },
-    { id: 10, title: 'Route Efficiency Analysis', description: 'Delivery route optimization and efficiency' },
-    { id: 11, title: 'Failed Delivery Analysis', description: 'Analysis of failed deliveries and reasons' },
-    { id: 12, title: 'Customer Satisfaction Report', description: 'Delivery satisfaction scores and feedback' }
+    { id: 9, title: 'Delivery Performance', description: 'Delivery success rates and metrics', endpoint: '/api/reports/deliveries' },
+    { id: 10, title: 'Route Efficiency', description: 'Delivery route performance analysis', endpoint: '/api/reports/deliveries' },
+    { id: 11, title: 'Settlement Reports', description: 'Driver settlement and reconciliation', endpoint: '/api/reports/settlements' },
+    { id: 12, title: 'Logistics Overview', description: 'Complete logistics performance dashboard', endpoint: '/api/reports/deliveries' }
   ];
 
   staffReports = [
@@ -370,11 +376,103 @@ export class HoReportsComponent implements OnInit {
   }
 
   viewReport(report: any): void {
-    console.log('Viewing report:', report);
+    const apiUrl = `${environment.apiUrl}${report.endpoint}`;
+    this.http.get(apiUrl).subscribe({
+      next: (data: any) => {
+        this.reportData = data;
+        this.displayReport(report, data);
+      },
+      error: (error) => {
+        Swal.fire('Error', 'Failed to load report data', 'error');
+        console.error('Report error:', error);
+      }
+    });
+  }
+
+  displayReport(report: any, data: any): void {
+    let htmlContent = '';
+    
+    switch(report.id) {
+      case 1: // Sales Report
+        htmlContent = `
+          <div style="text-align: left;">
+            <h3>Sales Performance Report</h3>
+            <p><strong>Total Sales:</strong> LKR ${data.totalSales?.toFixed(2) || 0}</p>
+            <p><strong>Total Orders:</strong> ${data.totalOrders || 0}</p>
+            <p><strong>Average Order Value:</strong> LKR ${data.averageOrderValue?.toFixed(2) || 0}</p>
+          </div>
+        `;
+        break;
+      case 2: // Dashboard
+        htmlContent = `
+          <div style="text-align: left;">
+            <h3>Dashboard Summary</h3>
+            <p><strong>Total Orders:</strong> ${data.totalOrders || 0}</p>
+            <p><strong>Total Products:</strong> ${data.totalProducts || 0}</p>
+            <p><strong>Total Revenue:</strong> LKR ${data.totalRevenue?.toFixed(2) || 0}</p>
+            <p><strong>Total Deliveries:</strong> ${data.totalDeliveries || 0}</p>
+            <p><strong>Low Stock Items:</strong> ${data.lowStockItems || 0}</p>
+          </div>
+        `;
+        break;
+      case 3: // Financial
+        htmlContent = `
+          <div style="text-align: left;">
+            <h3>Financial Report</h3>
+            <p><strong>Total Revenue:</strong> LKR ${data.totalRevenue?.toFixed(2) || 0}</p>
+            <p><strong>Total Cash:</strong> LKR ${data.totalCash?.toFixed(2) || 0}</p>
+            <p><strong>Ledger Entries:</strong> ${data.ledgerEntries || 0}</p>
+          </div>
+        `;
+        break;
+      case 5: // Inventory
+        htmlContent = `
+          <div style="text-align: left;">
+            <h3>Inventory Report</h3>
+            <p><strong>Total Items:</strong> ${data.totalItems || 0}</p>
+            <p><strong>Low Stock Items:</strong> ${data.lowStockItems || 0}</p>
+            <p><strong>Low Stock Percentage:</strong> ${data.lowStockPercentage?.toFixed(1) || 0}%</p>
+          </div>
+        `;
+        break;
+      case 9: // Delivery
+        htmlContent = `
+          <div style="text-align: left;">
+            <h3>Delivery Performance</h3>
+            <p><strong>Total Deliveries:</strong> ${data.totalDeliveries || 0}</p>
+            <p><strong>Delivered Count:</strong> ${data.deliveredCount || 0}</p>
+            <p><strong>Delivery Rate:</strong> ${data.deliveryRate?.toFixed(1) || 0}%</p>
+          </div>
+        `;
+        break;
+      case 11: // Settlements
+        htmlContent = `
+          <div style="text-align: left;">
+            <h3>Settlement Report</h3>
+            <p><strong>Total Settlements:</strong> ${data.totalSettlements || 0}</p>
+            <p><strong>Pending Settlements:</strong> ${data.pendingSettlements || 0}</p>
+            <p><strong>Completed Settlements:</strong> ${data.completedSettlements || 0}</p>
+          </div>
+        `;
+        break;
+      default:
+        htmlContent = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    }
+    
+    Swal.fire({
+      title: report.title,
+      html: htmlContent,
+      width: '600px',
+      confirmButtonText: 'Close'
+    });
   }
 
   exportReport(report: any, format: string): void {
-    console.log(`Exporting report ${report.title} as ${format}`);
+    if (report.endpoint.includes('/export')) {
+      window.open(`${environment.apiUrl}${report.endpoint}`, '_blank');
+    } else {
+      Swal.fire('Info', `Export as ${format} will be available soon`, 'info');
+    }
   }
 
   editSchedule(schedule: any): void {

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { OrderService } from '../../../core/services/order.service';
 import { Order } from '../../../models/order.model';
 import { AuthService } from '../../../core/services/auth.service';
@@ -42,7 +43,7 @@ import Swal from 'sweetalert2';
           </div>
           
           <div class="order-details">
-            <p><strong>Store:</strong> {{order.storeName || order.customer.fullName}}</p>
+            <p><strong>Store:</strong> {{order.storeName || order.customerName}}</p>
             <p><strong>Phone:</strong> {{order.customerPhone || 'N/A'}}</p>
             <p><strong>RDC:</strong> {{order.rdcLocation}}</p>
             <p><strong>Order Date:</strong> {{formatDate(order.orderDate)}}</p>
@@ -70,6 +71,11 @@ import Swal from 'sweetalert2';
             <button (click)="updateOrderStatus(order)" 
                     [disabled]="order.newStatus === order.status">
               Update Status
+            </button>
+            <button *ngIf="order.status === 'DELIVERED'" 
+                    (click)="downloadInvoice(order.id)" 
+                    class="btn-download">
+              📄 Download Invoice
             </button>
           </div>
         </div>
@@ -106,6 +112,8 @@ import Swal from 'sweetalert2';
     .status-select { padding: 6px; border: 1px solid #ddd; border-radius: 4px; }
     .order-actions button { padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
     .order-actions button:disabled { background: #bdc3c7; cursor: not-allowed; }
+    .btn-download { background: #27ae60 !important; }
+    .btn-download:hover { background: #229954 !important; }
     .no-orders { text-align: center; padding: 40px; color: #666; }
   `]
 })
@@ -117,7 +125,8 @@ export class OrderManagementComponent implements OnInit {
 
   constructor(
     private orderService: OrderService,
-    private authService: AuthService
+    private authService: AuthService,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -180,5 +189,78 @@ export class OrderManagementComponent implements OnInit {
 
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString();
+  }
+
+  downloadInvoice(orderId: number) {
+    const order = this.orders.find(o => o.id === orderId);
+    if (!order) {
+      Swal.fire('Error', 'Order not found', 'error');
+      return;
+    }
+
+    // Generate invoice data from order
+    const subtotal = order.totalAmount;
+    const taxRate = 0.10; // 10% tax
+    const taxAmount = subtotal * taxRate;
+    const totalAmount = subtotal + taxAmount;
+    const invoiceNumber = `INV-${Date.now()}`;
+
+    // Create PDF content using jsPDF
+    const { jsPDF } = (window as any).jspdf;
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFontSize(20);
+    doc.text('INVOICE', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text(`Invoice Number: ${invoiceNumber}`, 20, 40);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 50);
+    doc.text(`Order ID: ${order.id}`, 20, 60);
+    
+    // Customer Info
+    doc.text('Bill To:', 20, 80);
+    doc.text(`${order.customerName || order.storeName || 'N/A'}`, 20, 90);
+    doc.text(`${order.customerPhone || 'N/A'}`, 20, 100);
+    doc.text(`${order.deliveryAddress || 'N/A'}`, 20, 110);
+    
+    // Items table
+    let yPos = 130;
+    doc.text('Items:', 20, yPos);
+    yPos += 10;
+    
+    doc.text('Product', 20, yPos);
+    doc.text('Qty', 100, yPos);
+    doc.text('Unit Price', 130, yPos);
+    doc.text('Total', 170, yPos);
+    yPos += 10;
+    
+    if (order.orderItems) {
+      order.orderItems.forEach(item => {
+        doc.text(item.product.name, 20, yPos);
+        doc.text(item.quantity.toString(), 100, yPos);
+        doc.text(`LKR ${item.unitPrice}`, 130, yPos);
+        doc.text(`LKR ${item.totalPrice}`, 170, yPos);
+        yPos += 10;
+      });
+    }
+    
+    // Summary
+    yPos += 10;
+    doc.text(`Subtotal: LKR ${subtotal.toFixed(2)}`, 130, yPos);
+    yPos += 10;
+    doc.text(`Tax (10%): LKR ${taxAmount.toFixed(2)}`, 130, yPos);
+    yPos += 10;
+    doc.setFontSize(14);
+    doc.text(`Total: LKR ${totalAmount.toFixed(2)}`, 130, yPos);
+    
+    // Footer
+    doc.setFontSize(10);
+    doc.text('Thank you for your business!', 105, 280, { align: 'center' });
+    
+    // Download PDF
+    doc.save(`invoice-${invoiceNumber}.pdf`);
+    
+    Swal.fire('Downloaded', `Invoice ${invoiceNumber} downloaded as PDF!`, 'success');
   }
 }

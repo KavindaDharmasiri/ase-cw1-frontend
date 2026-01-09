@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { OrderStatusTrackingComponent } from './features/order-status-tracking/order-status-tracking.component';
 import { RegisterComponent } from './features/auth/register/register.component';
 import { LoginComponent } from './features/auth/login/login.component';
 import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password.component';
@@ -16,9 +17,12 @@ import { AnalyticsComponent } from './features/dashboard/analytics/analytics.com
 import { OrderPlacementComponent } from './features/orders/order-placement/order-placement.component';
 import { DeliveryTrackingComponent } from './features/delivery-tracking/delivery-tracking.component';
 import { StockTransferComponent } from './features/stock-transfer/stock-transfer.component';
+import { StockAllocationComponent } from './features/stock-allocation/stock-allocation.component';
+import { DriverManagementComponent } from './features/driver-management/driver-management.component';
 import { OrderTrackingComponent } from './features/order-tracking/order-tracking.component';
 import { InvoicesComponent } from './features/invoices/invoices.component';
 import { ReportsComponent } from './features/reports/reports.component';
+import { OrderVerificationComponent } from './features/order-verification/order-verification.component';
 import { OrderManagementComponent } from './features/orders/order-management/order-management.component';
 import { CartComponent } from './features/cart/cart.component';
 import { CheckoutComponent } from './features/checkout/checkout.component';
@@ -48,12 +52,13 @@ import { PricingManagementComponent } from './features/pricing-management/pricin
 import { DriverSettlementComponent } from './features/driver-settlement/driver-settlement.component';
 import { UserManagementComponent } from './features/user-management/user-management.component';
 import { SystemCheckpointComponent } from './features/system-checkpoint/system-checkpoint.component';
+import { DeliveryConfirmationComponent } from './features/delivery-confirmation/delivery-confirmation.component';
+import { AdvancedAnalyticsComponent } from './features/advanced-analytics/advanced-analytics.component';
 import { AuthGuard } from './core/guards/auth.guard';
 import { RoleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
-  { path: 'register', component: RegisterComponent },
   { path: 'login', component: LoginComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
@@ -62,13 +67,17 @@ export const routes: Routes = [
   { path: 'bulk-upload', component: BulkUploadComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
   { path: 'analytics', component: AnalyticsComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'advanced-analytics', component: AdvancedAnalyticsComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
+  { path: 'delivery-confirmation', component: DeliveryConfirmationComponent, canActivate: [RoleGuard], data: { role: 'LOGISTICS' } },
   { path: 'orders/place', component: OrderPlacementComponent, canActivate: [RoleGuard], data: { role: 'RETAILER' } },
   { path: 'delivery-tracking', component: DeliveryTrackingComponent, canActivate: [RoleGuard], data: { role: 'LOGISTICS' } },
   { path: 'stock-transfers', component: StockTransferComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
+  { path: 'stock-allocation', component: StockAllocationComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
+  { path: 'driver-management', component: DriverManagementComponent, canActivate: [RoleGuard], data: { role: 'LOGISTICS' } },
   { path: 'orders', component: OrderTrackingComponent, canActivate: [RoleGuard], data: { role: 'RETAILER' } },
   { path: 'cart', component: CartComponent, canActivate: [RoleGuard], data: { role: 'RETAILER' } },
   { path: 'checkout', component: CheckoutComponent, canActivate: [RoleGuard], data: { role: 'RETAILER' } },
-  { path: 'delivery-status/:orderId', component: DeliveryStatusComponent, canActivate: [RoleGuard], data: { role: 'RETAILER' } },
+  { path: 'delivery-tracking/:orderId', component: DeliveryTrackingComponent, canActivate: [RoleGuard], data: { role: 'RETAILER' } },
   { path: 'rdc-dashboard', component: RdcDashboardComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
   { path: 'rdc/orders', component: RdcOrdersComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
   { path: 'rdc/deliveries', component: RdcDeliveriesComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
@@ -97,6 +106,7 @@ export const routes: Routes = [
   { path: 'procurement', component: ProcurementComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
   { path: 'vehicles', component: VehicleManagementComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
   { path: 'goods-receipt', component: GoodsReceiptComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
+  { path: 'order-verification', component: OrderVerificationComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
   { path: 'warehouse', component: WarehouseComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
   { path: 'driver-settlements', component: DriverSettlementComponent, canActivate: [RoleGuard], data: { role: 'RDC_STAFF' } },
   { path: 'pricing', component: PricingManagementComponent, canActivate: [RoleGuard], data: { role: 'HEAD_OFFICE_MANAGER' } },
@@ -105,6 +115,7 @@ export const routes: Routes = [
   { path: 'products', component: ProductsComponent, canActivate: [AuthGuard] },
   { path: 'product-catalog', component: ProductCatalogComponent, canActivate: [RoleGuard], data: { role: 'RETAILER' } },
   { path: 'real-time-tracking', component: RealTimeTrackingComponent, canActivate: [AuthGuard] },
+  { path: 'order-status-tracking', component: OrderStatusTrackingComponent, canActivate: [RoleGuard], data: { role: 'LOGISTICS' } },
   { path: 'inventory', component: InventoryComponent, canActivate: [AuthGuard] },
   { path: 'unauthorized', component: UnauthorizedComponent }
 ];
